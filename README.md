@@ -1,6 +1,6 @@
 # text_classification
 the purpose of this repository is explore text classification methods in NLP with deep learning. 
-it has all kinds of baseline models for text classificaiton. some of these models are classic, so they may be a good to serve as baseline models.
+it has all kinds of baseline models for text classificaiton. although many of these models are simple, and may not get you to top level of the tasks.but some of these models are very classic, so they may be good to serve as baseline models.
 
 Useage:
 
