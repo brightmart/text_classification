@@ -45,5 +45,6 @@ check: p9_twoCNNTextRelation_model.py
 structure: one bi-directional lstm for one sentence(get output1), another bi-directional lstm for another sentence(get output2). then:
 softmax(output1*M*output2)
 check:p9_BiLstmTextRelationTwoRNN_model.py
+for more detail you can go to: <a herf='http://www.wildml.com/2016/07/deep-learning-for-chatbots-2-retrieval-based-model-tensorflow/'>Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow<a>
 
 to be continued. for any problem, concat brightmart@hotmail.com
