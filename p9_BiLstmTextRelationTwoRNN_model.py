@@ -61,7 +61,7 @@ class BiLstmTextRelationTwoRNN:
         output1=self.bi_LSTM_layer(self.input_x)             # [batch_size,hidden_size*2]
         output2 = self.bi_LSTM_layer(self.input_x2)          # [batch_size,hidden_size*2]
         output1_transformed=tf.matmul(output1,self.W)+self.b #[batch_size,hidden_size*2]<-----[batch_size,hidden_size*2],[self.hidden_size*2, self.hidden_size*2]
-        output=tf.matmul(output1_transformed,tf.transpose(output2)) #[batch_size,batch_size]<------[batch_size,hidden_size*2]*[hidden_size*2,batch_size]
+        output=tf.multiply(output2,output1_transformed)      #batch_size,hidden_size*2].we interpret this as similarity of sentence1 and sentence2
         #4. logits(use linear layer)
         with tf.name_scope("output"): #inputs: A `Tensor` of shape `[batch_size, dim]`.  The forward activations of the input network.
             logits = tf.matmul(output, self.W_projection) + self.b_projection  # [batch_size,num_classes]<-----[batch_size,batch_size]*[batch_size,num_classes]
