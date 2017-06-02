@@ -31,9 +31,9 @@ tf.app.flags.DEFINE_boolean("use_embedding",True,"whether to use embedding or no
 #tf.app.flags.DEFINE_string("cache_path","text_cnn_checkpoint/data_cache.pik","checkpoint location for the model")
 #train-zhihu4-only-title-all.txt
 tf.app.flags.DEFINE_string("traning_data_path","train-zhihu4-only-title-all.txt","path of traning data.") #training-data/test-zhihu4-only-title.txt--->'training-data/train-zhihu5-only-title-multilabel.txt'
-tf.app.flags.DEFINE_integer("num_filters", 256, "number of filters") #128
+tf.app.flags.DEFINE_integer("num_filters", 128, "number of filters") #128
 tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec.bin-100","word2vec's vocabulary and vectors")
-filter_sizes=[1,2,3,4,5,6,7]
+filter_sizes=[3,4,5]
 #1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
 def main(_):
     #1.load data(X:list of lint,y:int).
