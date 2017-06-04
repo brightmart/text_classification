@@ -101,8 +101,10 @@ class TwoCNNTextRelation:
         # e.g. >>> x1=tf.ones([3,3]);x2=tf.ones([3,3]);x=[x1,x2]
         #         x12_0=tf.concat(x,0)---->x12_0' shape:[6,3]
         #         x12_1=tf.concat(x,1)---->x12_1' shape;[3,6]
-        h_pool = tf.concat(pooled_outputs,3)  # shape:[batch_size, 1, 1, num_filters_total]. tf.concat=>concatenates tensors along one dimension.where num_filters_total=num_filters_1+num_filters_2+num_filters_3
-        h_pool_flat = tf.reshape(h_pool, [-1,self.num_filters_total])  # shape should be:[None,num_filters_total]. here this operation has some result as tf.sequeeze().e.g. x's shape:[3,3];tf.reshape(-1,x) & (3, 3)---->(1,9)
+        h_pool = tf.concat(pooled_outputs,
+                           3)  # shape:[batch_size, 1, 1, num_filters_total]. tf.concat=>concatenates tensors along one dimension.where num_filters_total=num_filters_1+num_filters_2+num_filters_3
+        h_pool_flat = tf.reshape(h_pool, [-1,
+                                          self.num_filters_total])  # shape should be:[None,num_filters_total]. here this operation has some result as tf.sequeeze().e.g. x's shape:[3,3];tf.reshape(-1,x) & (3, 3)---->(1,9)
         # 3.=====>add dropout: use tf.nn.dropout
         with tf.name_scope("dropout"):
             h_drop = tf.nn.dropout(h_pool_flat, keep_prob=self.dropout_keep_prob)  # [None,num_filters_total]

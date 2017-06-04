@@ -42,15 +42,19 @@ class fastTextB:
         self.Embedding = tf.get_variable("Embedding", [self.vocab_size, self.embed_size])
         self.W = tf.get_variable("W", [self.embed_size, self.label_size])
         self.b = tf.get_variable("b", [self.label_size])
+
     def inference(self):
         """main computation graph here: 1.embedding-->2.average-->3.linear classifier"""
         # 1.get emebedding of words in the sentence
         sentence_embeddings = tf.nn.embedding_lookup(self.Embedding,self.sentence)  # [None,self.sentence_len,self.embed_size]
+
         # 2.average vectors, to get representation of the sentence
         self.sentence_embeddings = tf.reduce_mean(sentence_embeddings, axis=1)  # [None,self.embed_size]
+
         # 3.linear classifier layer
         logits = tf.matmul(self.sentence_embeddings, self.W) + self.b #[None, self.label_size]==tf.matmul([None,self.embed_size],[self.embed_size,self.label_size])
         return logits
+
     def loss(self,l2_lambda=0.01): #0.0001-->0.001
         """calculate loss using (NCE)cross entropy here"""
         # Compute the average NCE loss for the batch.

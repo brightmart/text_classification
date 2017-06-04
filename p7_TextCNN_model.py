@@ -5,7 +5,8 @@ import tensorflow as tf
 import numpy as np
 
 class TextCNN:
-    def __init__(self, filter_sizes,num_filters,num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,is_training,initializer=tf.random_normal_initializer(stddev=0.1)):
+    def __init__(self, filter_sizes,num_filters,num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,
+                 is_training,initializer=tf.random_normal_initializer(stddev=0.1),multi_label_flag=False):
         """init all hyperparameter here"""
         # set hyperparamter
         self.num_classes = num_classes
@@ -19,11 +20,12 @@ class TextCNN:
         self.num_filters=num_filters
         self.initializer=initializer
         self.num_filters_total=self.num_filters * len(filter_sizes) #how many filters totally.
+        self.multi_label_flag=multi_label_flag
 
         # add placeholder (X,label)
         self.input_x = tf.placeholder(tf.int32, [None, self.sequence_length], name="input_x")  # X
-        self.input_y = tf.placeholder(tf.int32, [None,],name="input_y")  # y [None,num_classes]
-        self.input_y_multilabel = tf.placeholder(tf.float32,[None,self.num_classes], name="input_y_multilabel")  # y [None,num_classes]
+        self.input_y = tf.placeholder(tf.int32, [None,],name="input_y")  # y:[None,num_classes]
+        self.input_y_multilabel = tf.placeholder(tf.float32,[None,self.num_classes], name="input_y_multilabel")  # y:[None,num_classes]. this is for multi-label classification only.
         self.dropout_keep_prob=tf.placeholder(tf.float32,name="dropout_keep_prob")
 
         self.global_step = tf.Variable(0, trainable=False, name="Global_Step")
@@ -35,12 +37,20 @@ class TextCNN:
         self.logits = self.inference() #[None, self.label_size]. main computation graph is here.
         if not is_training:
             return
-        self.loss_val = self.loss()
+        if multi_label_flag:
+            print("going to use multi label loss.")
+            self.loss_val = self.loss_multilabel()
+        else:
+            print("going to use single label loss.")
+            self.loss_val = self.loss()
         self.train_op = self.train()
         self.predictions = tf.argmax(self.logits, 1, name="predictions")  # shape:[None,]
 
-        correct_prediction = tf.equal(tf.cast(self.predictions,tf.int32), self.input_y) #tf.argmax(self.logits, 1)-->[batch_size]
-        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="Accuracy") # shape=()
+        if not self.multi_label_flag:
+            correct_prediction = tf.equal(tf.cast(self.predictions,tf.int32), self.input_y) #tf.argmax(self.logits, 1)-->[batch_size]
+            self.accuracy =tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="Accuracy") # shape=()
+        else:
+            self.accuracy = tf.constant(0.5) #fuke accuracy. (you can calcuate accuracy outside of graph using method calculate_accuracy(...) in train.py)
 
     def instantiate_weights(self):
         """define all weights here"""
@@ -104,26 +114,26 @@ class TextCNN:
             loss=loss+l2_losses
         return loss
 
-    def loss_multilabel(self,l2_lambda=0.001): #this loss function is for multi-label classification
+    def loss_multilabel(self,l2_lambda=0.00001): #0.0001#this loss function is for multi-label classification
         with tf.name_scope("loss"):
             #input: `logits` and `labels` must have the same shape `[batch_size, num_classes]`
             #output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
             #input_y:shape=(?, 1999); logits:shape=(?, 1999)
+            # let `x = logits`, `z = labels`.  The logistic loss is:z * -log(sigmoid(x)) + (1 - z) * -log(1 - sigmoid(x))
             losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.input_y_multilabel, logits=self.logits);#losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input__y,logits=self.logits)
-            print("sigmoid_cross_entropy_with_logits.losses:",losses) #shape=(?, 1999)
-            losses=tf.reduce_sum(losses,axis=1) #shape=(?,)
-            loss=tf.reduce_mean(losses)
+            #losses=-self.input_y_multilabel*tf.log(self.logits)-(1-self.input_y_multilabel)*tf.log(1-self.logits)
+            print("sigmoid_cross_entropy_with_logits.losses:",losses) #shape=(?, 1999).
+            losses=tf.reduce_sum(losses,axis=1) #shape=(?,). loss for all data in the batch
+            loss=tf.reduce_mean(losses)         #shape=().   average loss in the batch
             l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * l2_lambda
             loss=loss+l2_losses
         return loss
-
 
     def train(self):
         """based on the loss, use SGD to update parameter"""
         learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps,self.decay_rate, staircase=True)
         train_op = tf.contrib.layers.optimize_loss(self.loss_val, global_step=self.global_step,learning_rate=learning_rate, optimizer="Adam")
         return train_op
-
 
 #test started
 #def test():
@@ -148,7 +158,9 @@ class TextCNN:
     #        input_x[input_x>0.5]=1
     #       input_x[input_x <= 0.5] = 0
     #       input_y=np.array([1,0,1,1,1,2,1,1])#np.zeros((batch_size),dtype=np.int32) #[None, self.sequence_length]
-    #       loss,acc,predict,W_projection_value,_=sess.run([textRNN.loss_val,textRNN.accuracy,textRNN.predictions,textRNN.W_projection,textRNN.train_op],feed_dict={textRNN.input_x:input_x,textRNN.input_y:input_y,textRNN.dropout_keep_prob:dropout_keep_prob})
+    #       loss,acc,predict,W_projection_value,_=sess.run([textRNN.loss_val,textRNN.accuracy,textRNN.predictions,
+                                # textRNN.W_projection,textRNN.train_op],
+                                # feed_dict={textRNN.input_x:input_x,textRNN.input_y:input_y,textRNN.dropout_keep_prob:dropout_keep_prob})
     #       print("loss:",loss,"acc:",acc,"label:",input_y,"prediction:",predict)
             #print("W_projection_value_:",W_projection_value)
 #test()

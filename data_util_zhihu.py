@@ -8,8 +8,9 @@ import pickle
 PAD_ID = 0
 from tflearn.data_utils import pad_sequences
 
-def create_voabulary(simple=None,word2vec_model_path='zhihu-word2vec-multilabel.bin-100',name_scope=''):
+def create_voabulary(simple=None,word2vec_model_path='zhihu-word2vec-title-desc.bin-100',name_scope=''): #zhihu-word2vec-multilabel.bin-100
     cache_path = name_scope + "_word_voabulary.pik"
+    print("cache_path:",cache_path,"file_exists:",os.path.exists(cache_path))
     if os.path.exists(cache_path):#如果缓存文件存在，则直接读取
         with open(cache_path, 'r') as data_f:
             vocabulary_word2index, vocabulary_index2word=pickle.load(data_f)
@@ -99,7 +100,8 @@ def create_voabulary_labelO():
                 label_unique[label]=label
     return vocabulary_word2index_label,vocabulary_index2word_label
 
-def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,valid_portion=0.05,max_training_data=1000000,traning_data_path='train-zhihu4-only-title-all.txt',multi_label_flag=True):  # n_words=100000,
+def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,valid_portion=0.05,max_training_data=1000000,
+                             traning_data_path='train-zhihu4-only-title-all.txt',multi_label_flag=True):  # n_words=100000,
     """
     input: a file path
     :return: train, test, valid. where train=(trainX, trainY). where
@@ -124,7 +126,7 @@ def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,v
         #x_=process_one_sentence_to_get_ui_bi_tri_gram(x)
         x=x.split(" ")
         x = [vocabulary_word2index.get(e,0) for e in x] #if can't find the word, set the index as '0'.(equal to PAD_ID = 0)
-        if i<1:
+        if i<2:
             print(i,"x1:",x) #word to index
         if multi_label_flag:
             ys = y.replace('\n', '').split(" ") #ys is a list
@@ -135,10 +137,14 @@ def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,v
             ys_mulithot_list=transform_multilabel_as_multihot(ys_index)
         else:
             ys_mulithot_list=vocabulary_word2index_label[y]
-        if i<1:
+        if i<=10:
+            print("ys_index:")
+            print(ys_index)
             print(i,"y:",y,"ys_mulithot_list:",ys_mulithot_list)
         X.append(x)
         Y.append(ys_mulithot_list)
+        #if i>50000:
+        #    break
     # 4.split to train,test and valid data
     number_examples = len(X)
     print("number_examples:",number_examples) #
@@ -352,7 +358,6 @@ def transform_multilabel_as_multihotO(label_list,label_size=1999): #1999label_li
     result[(range(batch_size),label_list)]=1
     return result
 
-
 def load_final_test_data(file_path):
     final_test_file_predict_object = codecs.open(file_path, 'r', 'utf8')
     lines=final_test_file_predict_object.readlines()
@@ -374,7 +379,7 @@ def load_data_predict(vocabulary_word2index,vocabulary_word2index_label,question
         else:
             x=question_string_list.split(" ")
         x = [vocabulary_word2index.get(e, 0) for e in x] #if can't find the word, set the index as '0'.(equal to PAD_ID = 0)
-        if i==0:
+        if i<=2:
             print("question_id:",queston_id);print("question_string_list:",question_string_list);print("x_indexed:",x)
         final_list.append((queston_id,x))
     number_examples = len(final_list)
@@ -437,55 +442,78 @@ def read_topic_info():
     print("len(dict_questionid_title):",len(dict_questionid_title))
     return dict_questionid_title
 
+def stat_training_data_length():
+    training_data='train-zhihu4-only-title-all.txt'
+    f = codecs.open(training_data, 'r', 'utf8')
+    lines=f.readlines()
+    length_dict={0:0,5:0,10:0,15:0,20:0,25:0,30:0,35:0,40:0,100:0,150:0,200:0,1500:0}
+    length_list=[0,5,10,15,20,25,30,35,40,100,150,200,1500]
+    for i,line in enumerate(lines):
+        line_list=line.split('__label__')[0].strip().split(" ")
+        length=len(line_list)
+        #print(i,"length:",length)
+        for l in length_list:
+            if length<l:
+                length=l
+                #print("length.assigned:",length)
+                break
+        #print("length.before dict assign:", length)
+        length_dict[length]=length_dict[length]+1
+    print("length_dict:",length_dict)
+
 
 if __name__ == '__main__':
     if __name__ == '__main__':
-        #1.
-        #vocabulary_word2index, vocabulary_index2word=create_voabulary()
-        #vocabulary_word2index_label, vocabulary_index2word_label=create_voabulary_label()
-        #load_data_with_multilabels(vocabulary_word2index,vocabulary_word2index_label,data_type='test')
-        #2.
-        #sentence=u'我想开通创业板'
-        #sentence='w18476 w4454 w1674 w6 w25 w474 w1333 w1467 w863 w6 w4430 w11 w813 w4463 w863 w6 w4430 w111'
-        #result=process_one_sentence_to_get_ui_bi_tri_gram(sentence,n_gram=3)
-        #print(len(result),"result:",result)
+        if __name__ == '__main__':
+            #1.
+            #vocabulary_word2index, vocabulary_index2word=create_voabulary()
+            #vocabulary_word2index_label, vocabulary_index2word_label=create_voabulary_label()
+            #load_data_with_multilabels(vocabulary_word2index,vocabulary_word2index_label,data_type='test')
+            #2.
+            #sentence=u'我想开通创业板'
+            #sentence='w18476 w4454 w1674 w6 w25 w474 w1333 w1467 w863 w6 w4430 w11 w813 w4463 w863 w6 w4430 w111'
+            #result=process_one_sentence_to_get_ui_bi_tri_gram(sentence,n_gram=3)
+            #print(len(result),"result:",result)
 
-        #3. transform to multilabel
-        #label_list=[0,1,4,9,5]
-        #result=transform_multilabel_as_multihot(label_list,label_size=15)
-        #print("result:",result)
+            #3. transform to multilabel
+            #label_list=[0,1,4,9,5]
+            #result=transform_multilabel_as_multihot(label_list,label_size=15)
+            #print("result:",result)
 
-        #4.load data for predict-----------------------------------------------------------------
-        #file_path='test-zhihu-forpredict-v4only-title.txt'
-        #questionid_question_lists=load_final_test_data(file_path)
+            #4.load data for predict-----------------------------------------------------------------
+            #file_path='test-zhihu-forpredict-v4only-title.txt'
+            #questionid_question_lists=load_final_test_data(file_path)
 
-        #vocabulary_word2index, vocabulary_index2word=create_voabulary()
-        #vocabulary_word2index_label,_=create_voabulary_label()
-        #final_list=load_data_predict(vocabulary_word2index, vocabulary_word2index_label, questionid_question_lists)
+            #vocabulary_word2index, vocabulary_index2word=create_voabulary()
+            #vocabulary_word2index_label,_=create_voabulary_label()
+            #final_list=load_data_predict(vocabulary_word2index, vocabulary_word2index_label, questionid_question_lists)
 
-        #5.process label require lengh
-        #ys_list=[99999]
-        #ys_list_result=proces_label_to_algin(ys_list,require_size=5)
-        #print(ys_list,"ys_list_result1.:",ys_list_result)
-        #ys_list=[99999,23423432,67566765]
-        #ys_list_result=proces_label_to_algin(ys_list,require_size=5)
-        #print(ys_list,"ys_list_result2.:",ys_list_result)
-        #ys_list=[99999,23423432,67566765,23333333]
-        #ys_list_result=proces_label_to_algin(ys_list,require_size=5)
-        #print(ys_list,"ys_list_result2.:",ys_list_result)
-        #ys_list = [99999, 23423432, 67566765,44543543,546546546,323423434]
-        #ys_list_result = proces_label_to_algin(ys_list, require_size=5)
-        #print(ys_list, "ys_list_result3.:", ys_list_result)
+            #5.process label require lengh
+            #ys_list=[99999]
+            #ys_list_result=proces_label_to_algin(ys_list,require_size=5)
+            #print(ys_list,"ys_list_result1.:",ys_list_result)
+            #ys_list=[99999,23423432,67566765]
+            #ys_list_result=proces_label_to_algin(ys_list,require_size=5)
+            #print(ys_list,"ys_list_result2.:",ys_list_result)
+            #ys_list=[99999,23423432,67566765,23333333]
+            #ys_list_result=proces_label_to_algin(ys_list,require_size=5)
+            #print(ys_list,"ys_list_result2.:",ys_list_result)
+            #ys_list = [99999, 23423432, 67566765,44543543,546546546,323423434]
+            #ys_list_result = proces_label_to_algin(ys_list, require_size=5)
+            #print(ys_list, "ys_list_result3.:", ys_list_result)
 
-        #6.create vocabulary label. sorted.
-        #create_voabulary_label()
+            #6.create vocabulary label. sorted.
+            #create_voabulary_label()
 
-        #d={'a':3,'b':2,'c':11}
-        #d_=sort_by_value(d)
-        #print("d_",d_)
+            #d={'a':3,'b':2,'c':11}
+            #d_=sort_by_value(d)
+            #print("d_",d_)
 
-        #7.
-        #test_pad()
+            #7.
+            #test_pad()
 
-        #8.read topic info
-        read_topic_info()
+            #8.read topic info
+            #read_topic_info()
+
+            #9。
+            stat_training_data_length()

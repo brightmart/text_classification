@@ -17,23 +17,24 @@ import pickle
 FLAGS=tf.app.flags.FLAGS
 tf.app.flags.DEFINE_integer("num_classes",1999,"number of label")
 tf.app.flags.DEFINE_float("learning_rate",0.01,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 1024, "Batch size for training/evaluating.") #批处理的大小 32-->128
-tf.app.flags.DEFINE_integer("decay_steps", 20000, "how many steps before decay learning rate.") #批处理的大小 32-->128
-tf.app.flags.DEFINE_float("decay_rate", 0.8, "Rate of decay for learning rate.") #0.5一次衰减多少
+tf.app.flags.DEFINE_integer("batch_size", 512, "Batch size for training/evaluating.") #批处理的大小 32-->128
+tf.app.flags.DEFINE_integer("decay_steps", 6000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
+tf.app.flags.DEFINE_float("decay_rate", 0.65, "Rate of decay for learning rate.") #0.65一次衰减多少
 #tf.app.flags.DEFINE_integer("num_sampled",50,"number of noise sampling") #100
-tf.app.flags.DEFINE_string("ckpt_dir","text_cnn_checkpoint/","checkpoint location for the model")
+tf.app.flags.DEFINE_string("ckpt_dir","text_cnn_title_desc_checkpoint/","checkpoint location for the model")
 tf.app.flags.DEFINE_integer("sentence_len",100,"max sentence length")
 tf.app.flags.DEFINE_integer("embed_size",100,"embedding size")
 tf.app.flags.DEFINE_boolean("is_training",True,"is traning.true:tranining,false:testing/inference")
-tf.app.flags.DEFINE_integer("num_epochs",20,"embedding size")
+tf.app.flags.DEFINE_integer("num_epochs",17,"number of epochs to run.")
 tf.app.flags.DEFINE_integer("validate_every", 1, "Validate every validate_every epochs.") #每10轮做一次验证
 tf.app.flags.DEFINE_boolean("use_embedding",True,"whether to use embedding or not.")
 #tf.app.flags.DEFINE_string("cache_path","text_cnn_checkpoint/data_cache.pik","checkpoint location for the model")
 #train-zhihu4-only-title-all.txt
-tf.app.flags.DEFINE_string("traning_data_path","train-zhihu4-only-title-all.txt","path of traning data.") #training-data/test-zhihu4-only-title.txt--->'training-data/train-zhihu5-only-title-multilabel.txt'
-tf.app.flags.DEFINE_integer("num_filters", 256, "number of filters") #128
-tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec.bin-100","word2vec's vocabulary and vectors")
-filter_sizes=[1,2,3,4,5,6,7]
+tf.app.flags.DEFINE_string("traning_data_path","train-zhihu4-only-title-all.txt","path of traning data.") #O.K.train-zhihu4-only-title-all.txt-->training-data/test-zhihu4-only-title.txt--->'training-data/train-zhihu5-only-title-multilabel.txt'
+tf.app.flags.DEFINE_integer("num_filters", 256, "number of filters") #256--->512
+tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec-title-desc.bin-100","word2vec's vocabulary and vectors") #zhihu-word2vec.bin-100-->zhihu-word2vec-multilabel-minicount15.bin-100
+tf.app.flags.DEFINE_boolean("multi_label_flag",True,"use multi label or single label.")
+filter_sizes=[1,2,3,4,5,6,7] #[1,2,3,4,5,6,7]
 #1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
 def main(_):
     #1.load data(X:list of lint,y:int).
@@ -44,21 +45,21 @@ def main(_):
     #else:
     if 1==1:
         trainX, trainY, testX, testY = None, None, None, None
-        vocabulary_word2index, vocabulary_index2word = create_voabulary(simple='simple',word2vec_model_path=FLAGS.word2vec_model_path,name_scope="cnn")
+        vocabulary_word2index, vocabulary_index2word = create_voabulary(word2vec_model_path=FLAGS.word2vec_model_path,name_scope="cnn2") #simple='simple'
         vocab_size = len(vocabulary_word2index)
         print("cnn_model.vocab_size:",vocab_size)
-        vocabulary_word2index_label,vocabulary_index2word_label = create_voabulary_label(name_scope="cnn")
-        train, test, _ = load_data_multilabel_new(vocabulary_word2index, vocabulary_word2index_label,multi_label_flag=False,traning_data_path=FLAGS.traning_data_path) #,traning_data_path=FLAGS.traning_data_path
+        vocabulary_word2index_label,vocabulary_index2word_label = create_voabulary_label(name_scope="cnn2")
+        if FLAGS.multi_label_flag:
+            FLAGS.traning_data_path='training-data/train-zhihu6-title-desc.txt' #test-zhihu5-only-title-multilabel.txt
+        train, test, _ = load_data_multilabel_new(vocabulary_word2index, vocabulary_word2index_label,multi_label_flag=FLAGS.multi_label_flag,traning_data_path=FLAGS.traning_data_path) #,traning_data_path=FLAGS.traning_data_path
         trainX, trainY = train
         testX, testY = test
         # 2.Data preprocessing.Sequence padding
         print("start padding & transform to one hot...")
         trainX = pad_sequences(trainX, maxlen=FLAGS.sentence_len, value=0.)  # padding to max length
         testX = pad_sequences(testX, maxlen=FLAGS.sentence_len, value=0.)  # padding to max length
-        ###############################################################################################
         #with open(FLAGS.cache_path, 'w') as data_f: #save data to cache file, so we can use it next time quickly.
         #    pickle.dump((trainX,trainY,testX,testY,vocabulary_index2word),data_f)
-        ###############################################################################################
         print("trainX[0]:", trainX[0]) #;print("trainY[0]:", trainY[0])
         # Converting labels to binary vectors
         print("end padding & transform to one hot...")
@@ -67,7 +68,8 @@ def main(_):
     config.gpu_options.allow_growth=True
     with tf.Session(config=config) as sess:
         #Instantiate Model
-        textCNN=TextCNN(filter_sizes,FLAGS.num_filters,FLAGS.num_classes, FLAGS.learning_rate, FLAGS.batch_size, FLAGS.decay_steps, FLAGS.decay_rate,FLAGS.sentence_len,vocab_size,FLAGS.embed_size,FLAGS.is_training)
+        textCNN=TextCNN(filter_sizes,FLAGS.num_filters,FLAGS.num_classes, FLAGS.learning_rate, FLAGS.batch_size, FLAGS.decay_steps,
+                        FLAGS.decay_rate,FLAGS.sentence_len,vocab_size,FLAGS.embed_size,FLAGS.is_training,multi_label_flag=FLAGS.multi_label_flag)
         #Initialize Save
         saver=tf.train.Saver()
         if os.path.exists(FLAGS.ckpt_dir+"checkpoint"):
@@ -87,9 +89,14 @@ def main(_):
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
                 if epoch==0 and counter==0:
                     print("trainX[start:end]:",trainX[start:end])#;print("trainY[start:end]:",trainY[start:end])
-                curr_loss,curr_acc,_=sess.run([textCNN.loss_val,textCNN.accuracy,textCNN.train_op],feed_dict={textCNN.input_x:trainX[start:end],textCNN.input_y:trainY[start:end],textCNN.dropout_keep_prob:0.5}) #curr_acc--->TextCNN.accuracy
+                feed_dict = {textCNN.input_x: trainX[start:end],textCNN.dropout_keep_prob: 0.5}
+                if not FLAGS.multi_label_flag:
+                    feed_dict[textCNN.input_y] = trainY[start:end]
+                else:
+                    feed_dict[textCNN.input_y_multilabel]=trainY[start:end]
+                curr_loss,curr_acc,_=sess.run([textCNN.loss_val,textCNN.accuracy,textCNN.train_op],feed_dict) #curr_acc--->TextCNN.accuracy
                 loss,counter,acc=loss+curr_loss,counter+1,acc+curr_acc
-                if counter %500==0:
+                if counter %50==0:
                     print("Epoch %d\tBatch %d\tTrain Loss:%.3f\tTrain Accuracy:%.3f" %(epoch,counter,loss/float(counter),acc/float(counter))) #tTrain Accuracy:%.3f---》acc/float(counter)
 
             #epoch increment
@@ -146,8 +153,12 @@ def do_eval(sess,textCNN,evalX,evalY,batch_size,vocabulary_index2word_label):
     number_examples=len(evalX)
     eval_loss,eval_acc,eval_counter=0.0,0.0,0
     for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
-        curr_eval_loss, logits,curr_eval_acc= sess.run([textCNN.loss_val,textCNN.logits,textCNN.accuracy],#curr_eval_acc--->textCNN.accuracy
-                                          feed_dict={textCNN.input_x: evalX[start:end],textCNN.input_y: evalY[start:end],textCNN.dropout_keep_prob:1})
+        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.dropout_keep_prob: 1}
+        if not FLAGS.multi_label_flag:
+            feed_dict[textCNN.input_y] = evalY[start:end]
+        else:
+            feed_dict[textCNN.input_y_multilabel] = evalY[start:end]
+        curr_eval_loss, logits,curr_eval_acc= sess.run([textCNN.loss_val,textCNN.logits,textCNN.accuracy],feed_dict)#curr_eval_acc--->textCNN.accuracy
         #label_list_top5 = get_label_using_logits(logits_[0], vocabulary_index2word_label)
         #curr_eval_acc=calculate_accuracy(list(label_list_top5), evalY[start:end][0],eval_counter)
         eval_loss,eval_acc,eval_counter=eval_loss+curr_eval_loss,eval_acc+curr_eval_acc,eval_counter+1

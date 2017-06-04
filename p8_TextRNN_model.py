@@ -108,24 +108,24 @@ class TextRNN:
         return train_op
 
 #test started
-# def test():
-#     #below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
-#     num_classes=10
-#     learning_rate=0.01
-#     batch_size=8
-#     decay_steps=1000
-#     decay_rate=0.9
-#     sequence_length=5
-#     vocab_size=10000
-#     embed_size=100
-#     is_training=True
-#     dropout_keep_prob=1#0.5
-#     textRNN=TextRNN(num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,is_training)
-#     with tf.Session() as sess:
-#         sess.run(tf.global_variables_initializer())
-#         for i in range(100):
-#             input_x=np.zeros((batch_size,sequence_length)) #[None, self.sequence_length]
-#             input_y=input_y=np.array([1,0,1,1,1,2,1,1]) #np.zeros((batch_size),dtype=np.int32) #[None, self.sequence_length]
-#             loss,acc,predict,_=sess.run([textRNN.loss_val,textRNN.accuracy,textRNN.predictions,textRNN.train_op],feed_dict={textRNN.input_x:input_x,textRNN.input_y:input_y,textRNN.dropout_keep_prob:dropout_keep_prob})
-#             print("loss:",loss,"acc:",acc,"label:",input_y,"prediction:",predict)
-#test()
+def test():
+    #below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
+    num_classes=10
+    learning_rate=0.01
+    batch_size=8
+    decay_steps=1000
+    decay_rate=0.9
+    sequence_length=5
+    vocab_size=10000
+    embed_size=100
+    is_training=True
+    dropout_keep_prob=1#0.5
+    textRNN=TextRNN(num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,is_training)
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        for i in range(100):
+            input_x=np.zeros((batch_size,sequence_length)) #[None, self.sequence_length]
+            input_y=input_y=np.array([1,0,1,1,1,2,1,1]) #np.zeros((batch_size),dtype=np.int32) #[None, self.sequence_length]
+            loss,acc,predict,_=sess.run([textRNN.loss_val,textRNN.accuracy,textRNN.predictions,textRNN.train_op],feed_dict={textRNN.input_x:input_x,textRNN.input_y:input_y,textRNN.dropout_keep_prob:dropout_keep_prob})
+            print("loss:",loss,"acc:",acc,"label:",input_y,"prediction:",predict)
+test()
