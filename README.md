@@ -26,6 +26,8 @@ result: performance is as good as paper, speed also very fast.
 
 check: p5_fastTextB_model.py
 
+-------------------------------------------------------------------------
+
 2.TextCNN: implementation of <a href="http://www.aclweb.org/anthology/D14-1181"> Convolutional Neural Networks for Sentence Classification </a>
 
 structure:embedding--->conv--->max pooling--->fully connected layer-------->softmax
@@ -34,10 +36,18 @@ check: p7_TextCNN_model.py
 
 in order to get very good result with TextCNN, you also need to read carefully about this paper <a href="https://arxiv.org/abs/1510.03820">A Sensitivity Analysis of (and Practitioners' Guide to) Convolutional Neural Networks for Sentence Classification</a>: it give you some insights of things that can affect performance. although you need to  change some settings according to your specific task.
 
+
+-------------------------------------------------------------------------
+
+
 3.TextRNN
 structure:embedding--->bi-directional lstm--->concat output--->average----->softmax
 
 check: p8_TextRNN_model.py
+
+
+-------------------------------------------------------------------------
+
 
 4.BiLstmTextRelation
 structure same as TextRNN. but input is special designed. e.g.input:"how much is the computer? EOS price of laptop". where 'EOS' is a special
@@ -45,17 +55,31 @@ token spilted question1 and question2.
 
 check:p9_BiLstmTextRelation_model.py
 
+
+-------------------------------------------------------------------------
+
+
 5.twoCNNTextRelation
 structure: first use two different convolutional to extract feature of two sentences. then concat two features. use linear
 transform layer to out projection to target label, then softmax.
 
 check: p9_twoCNNTextRelation_model.py
 
+
+-------------------------------------------------------------------------
+
+
 6.BiLstmTextRelationTwoRNN
 structure: one bi-directional lstm for one sentence(get output1), another bi-directional lstm for another sentence(get output2). then:
 softmax(output1*M*output2)
 
 check:p9_BiLstmTextRelationTwoRNN_model.py
+
+for more detail you can go to: <a herf="http://www.wildml.com/2016/07/deep-learning-for-chatbots-2-retrieval-based-model-tensorflow">Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow<a>
+
+
+-------------------------------------------------------------------------
+
 
 7.RCNN:
 recurrent convolutional neural network for text classification
@@ -72,8 +96,8 @@ for left side context, it use a recurrent structure, a no-linearity transfrom of
 
 check: p71_TextRCNN_model.py
 
-for more detail you can go to: <a herf="http://www.wildml.com/2016/07/deep-learning-for-chatbots-2-retrieval-based-model-tensorflow">Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow<a>
 
+-------------------------------------------------------------------------
 
 
 to be continued. for any problem, concat brightmart@hotmail.com
