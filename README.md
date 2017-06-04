@@ -3,7 +3,7 @@ the purpose of this repository is explore text classification methods in NLP wit
 
 it has all kinds of baseline models for text classificaiton.
 
-although many of these models are simple, and may not get you to top level of the tasks.but some of these models are very classic, so they may be good to serve as baseline models.
+although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
 
 Useage:
 
@@ -32,6 +32,8 @@ structure:embedding--->conv--->max pooling--->fully connected layer-------->soft
 
 check: p7_TextCNN_model.py
 
+in order to get very good result with TextCNN, you also need to read carefully about this paper <a href="https://arxiv.org/abs/1510.03820">A Sensitivity Analysis of (and Practitioners' Guide to) Convolutional Neural Networks for Sentence Classification</a>: it give you some insights of things that can affect performance. although you need to  change some settings according to your specific task.
+
 3.TextRNN
 structure:embedding--->bi-directional lstm--->concat output--->average----->softmax
 
@@ -54,6 +56,15 @@ structure: one bi-directional lstm for one sentence(get output1), another bi-dir
 softmax(output1*M*output2)
 
 check:p9_BiLstmTextRelationTwoRNN_model.py
+
+7.RCNN:recurrent convolutional neural network for text classification
+
+structure:1)recurrent structure (convolutional layer) 2)max pooling 3) fully connected layer+softmax
+it learn represenation of each word in the sentence or document with left side context and right side context:
+representation current word=[left_side_context_vector,current_word_embedding,right_side_context_vecotor].
+for left side context, it use a recurrent structure, a no-linearity transfrom of previous word and left side previous context; similarly to right side context.
+
+check: p71_TextRCNN_model.py
 
 for more detail you can go to: <a herf="http://www.wildml.com/2016/07/deep-learning-for-chatbots-2-retrieval-based-model-tensorflow">Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow<a>
 
