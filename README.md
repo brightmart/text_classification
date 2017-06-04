@@ -58,10 +58,14 @@ softmax(output1*M*output2)
 check:p9_BiLstmTextRelationTwoRNN_model.py
 
 7.RCNN:recurrent convolutional neural network for text classification
-
+ implementation of <a href="https://scholar.google.com.hk/scholar?q=Recurrent+Convolutional+Neural+Networks+for+Text+Classification&hl=zh-CN&as_sdt=0&as_vis=1&oi=scholart&sa=X&ved=0ahUKEwjpx82cvqTUAhWHspQKHUbDBDYQgQMIITAA"> Recurrent Convolutional Neural Network for Text Classification </a>
+ 
 structure:1)recurrent structure (convolutional layer) 2)max pooling 3) fully connected layer+softmax
+
 it learn represenation of each word in the sentence or document with left side context and right side context:
+
 representation current word=[left_side_context_vector,current_word_embedding,right_side_context_vecotor].
+
 for left side context, it use a recurrent structure, a no-linearity transfrom of previous word and left side previous context; similarly to right side context.
 
 check: p71_TextRCNN_model.py
