@@ -57,8 +57,10 @@ softmax(output1*M*output2)
 
 check:p9_BiLstmTextRelationTwoRNN_model.py
 
-7.RCNN:recurrent convolutional neural network for text classification
- implementation of <a href="https://scholar.google.com.hk/scholar?q=Recurrent+Convolutional+Neural+Networks+for+Text+Classification&hl=zh-CN&as_sdt=0&as_vis=1&oi=scholart&sa=X&ved=0ahUKEwjpx82cvqTUAhWHspQKHUbDBDYQgQMIITAA"> Recurrent Convolutional Neural Network for Text Classification </a>
+7.RCNN:
+recurrent convolutional neural network for text classification
+
+implementation of <a href="https://scholar.google.com.hk/scholar?q=Recurrent+Convolutional+Neural+Networks+for+Text+Classification&hl=zh-CN&as_sdt=0&as_vis=1&oi=scholart&sa=X&ved=0ahUKEwjpx82cvqTUAhWHspQKHUbDBDYQgQMIITAA"> Recurrent Convolutional Neural Network for Text Classification </a>
  
 structure:1)recurrent structure (convolutional layer) 2)max pooling 3) fully connected layer+softmax
 
@@ -71,5 +73,7 @@ for left side context, it use a recurrent structure, a no-linearity transfrom of
 check: p71_TextRCNN_model.py
 
 for more detail you can go to: <a herf="http://www.wildml.com/2016/07/deep-learning-for-chatbots-2-retrieval-based-model-tensorflow">Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow<a>
+
+
 
 to be continued. for any problem, concat brightmart@hotmail.com
