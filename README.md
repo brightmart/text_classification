@@ -5,11 +5,15 @@ it has all kinds of baseline models for text classificaiton.
 
 although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
 
+-------------------------------------------------------------------------
+
 Useage:
 
 1) model is in xxx_model.py
 2) run python xxx_train.py to train the model
 3) run python xxx_predict.py to do inference(test).
+
+-------------------------------------------------------------------------
 
 Notice:
 
@@ -18,6 +22,8 @@ typical input like: "x1 x2 x3 x4 x5 __label__ 323434" where 'x1,x2' is words, '3
 it has a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
 
 Models:
+
+-------------------------------------------------------------------------
 
 1.fastText:  implmentation of <a href="https://arxiv.org/abs/1607.01759">Bag of Tricks for Efficient Text Classification</a>
 1) use bi-gram and/or tri-gram
