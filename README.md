@@ -8,13 +8,21 @@ it also support for multi-label classification where multi label associate with 
 although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
 
 including:
+
 1)fastText
+
 2)TextCNN
+
 3)TextRNN
+
 4)BiLstmTextRelation
+
 5)twoCNNTextRelation
+
 6)BiLstmTextRelationTwoRNN
+
 7)RCNN
+
 
 -------------------------------------------------------------------------
 
