@@ -3,6 +3,8 @@ the purpose of this repository is explore text classification methods in NLP wit
 
 it has all kinds of baseline models for text classificaiton.
 
+it also support for multi-label classification where multi label associate with an sentence or document.
+
 although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
 
 -------------------------------------------------------------------------
