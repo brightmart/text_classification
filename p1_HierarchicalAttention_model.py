@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-#TextCNN: 1. embeddding layers, 2.convolutional layer, 3.max-pooling, 4.softmax layer.
-# print("started...")
+#HierarchicalAttention: 1.Word Encoder. 2.Word Attention. 3.Sentence Encoder 4.Sentence Attention 5.linear classifier.
 import tensorflow as tf
 import numpy as np
 
@@ -131,17 +130,18 @@ class HierarchicalAttention:
         sentence_representation=self.attention_word_level(self.hidden_state) #output:[batch_size*num_sentences,hidden_size*2]
         sentence_representation=tf.reshape(sentence_representation,shape=[-1,self.num_sentences,self.hidden_size*2]) #shape:[batch_size,num_sentences,hidden_size*2]
 
-        if self.need_sentence_level_attention_encoder_flag: #need sentence level attention and encoder
-            # 3.Sentence Encoder
-            # 3.1) forward gru for sentence
-            hidden_state_forward_sentences = self.gru_forward_sentence_level(sentence_representation)  # a list.length is sentence_length, each element is [None,hidden_size]
-            # 3.2) backward gru for sentence
-            hidden_state_backward_sentences = self.gru_backward_sentence_level(sentence_representation)# a list,length is sentence_length, each element is [None,hidden_size]
-            # 3.3) concat forward hidden state and backward hidden state
-            # below hidden_state_sentence is a list,len:sentence_length,element:[None,hidden_size*2]
-            self.hidden_state_sentence = [tf.concat([h_forward, h_backward], axis=1) for h_forward, h_backward in zip(hidden_state_forward_sentences,hidden_state_backward_sentences)]
-            # 4.Sentence Attention
-            document_representation=self.attention_sentence_level(self.hidden_state_sentence) #shape:[None,hidden_size*4]
+        #if self.need_sentence_level_attention_encoder_flag: #need sentence level attention and encoder
+        # 3.Sentence Encoder
+        # 3.1) forward gru for sentence
+        hidden_state_forward_sentences = self.gru_forward_sentence_level(sentence_representation)  # a list.length is sentence_length, each element is [None,hidden_size]
+        # 3.2) backward gru for sentence
+        hidden_state_backward_sentences = self.gru_backward_sentence_level(sentence_representation)# a list,length is sentence_length, each element is [None,hidden_size]
+        # 3.3) concat forward hidden state and backward hidden state
+        # below hidden_state_sentence is a list,len:sentence_length,element:[None,hidden_size*2]
+        self.hidden_state_sentence = [tf.concat([h_forward, h_backward], axis=1) for h_forward, h_backward in zip(hidden_state_forward_sentences,hidden_state_backward_sentences)]
+        
+        # 4.Sentence Attention
+        document_representation=self.attention_sentence_level(self.hidden_state_sentence) #shape:[None,hidden_size*4]
 
         with tf.name_scope("dropout"): #TODO need to test whether this is necessory...
             self.h_drop=tf.nn.dropout(document_representation,keep_prob=self.dropout_keep_prob) #shape:[None,hidden_size*4]
