@@ -145,6 +145,7 @@ Structure:
 
 5) FC+Softmax
 
+check:p1_HierarchicalAttention_model.py
 
 -------------------------------------------------------------------------
 
