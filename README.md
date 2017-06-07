@@ -27,6 +27,15 @@ including:
 
 -------------------------------------------------------------------------
 
+Performance
+(mulit-label label prediction task,ask to prediction top5, 3 million training data,full mark:0.5)
+
+Model   | fastText | TextCNN | TextRNN | RCNN | Hierarchical Attention Network
+---     | ---      | ---     | ---     |---   |---                            |
+Score   | 0.362    |  0.405  |  0.358  | 0.395| 0.398 
+Training| 10minutes| 2hours  | 10hours |2hours| 2hours
+-------------------------------------------------------------------------
+
 Useage:
 
 1) model is in xxx_model.py
