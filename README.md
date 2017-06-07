@@ -23,6 +23,7 @@ including:
 
 7)RCNN
 
+8)Hierarchical Attention Network
 
 -------------------------------------------------------------------------
 
@@ -32,11 +33,13 @@ Useage:
 2) run python xxx_train.py to train the model
 3) run python xxx_predict.py to do inference(test).
 
+Each model has a test method under the model class. you can run the test method first to check whether the model can work properly.
+
 -------------------------------------------------------------------------
 
 Notice:
 
-some util function is in data_util.py; 
+Some util function is in data_util.py; 
 typical input like: "x1 x2 x3 x4 x5 __label__ 323434" where 'x1,x2' is words, '323434' is label;
 it has a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
 
@@ -55,7 +58,7 @@ check: p5_fastTextB_model.py
 
 2.TextCNN: implementation of <a href="http://www.aclweb.org/anthology/D14-1181"> Convolutional Neural Networks for Sentence Classification </a>
 
-structure:embedding--->conv--->max pooling--->fully connected layer-------->softmax
+Structure:embedding--->conv--->max pooling--->fully connected layer-------->softmax
 
 check: p7_TextCNN_model.py
 
@@ -66,7 +69,7 @@ in order to get very good result with TextCNN, you also need to read carefully a
 
 
 3.TextRNN
-structure:embedding--->bi-directional lstm--->concat output--->average----->softmax
+Structure:embedding--->bi-directional lstm--->concat output--->average----->softmax
 
 check: p8_TextRNN_model.py
 
@@ -75,7 +78,7 @@ check: p8_TextRNN_model.py
 
 
 4.BiLstmTextRelation
-structure same as TextRNN. but input is special designed. e.g.input:"how much is the computer? EOS price of laptop". where 'EOS' is a special
+Structure same as TextRNN. but input is special designed. e.g.input:"how much is the computer? EOS price of laptop". where 'EOS' is a special
 token spilted question1 and question2.
 
 check:p9_BiLstmTextRelation_model.py
@@ -85,7 +88,7 @@ check:p9_BiLstmTextRelation_model.py
 
 
 5.twoCNNTextRelation
-structure: first use two different convolutional to extract feature of two sentences. then concat two features. use linear
+Structure: first use two different convolutional to extract feature of two sentences. then concat two features. use linear
 transform layer to out projection to target label, then softmax.
 
 check: p9_twoCNNTextRelation_model.py
@@ -95,7 +98,7 @@ check: p9_twoCNNTextRelation_model.py
 
 
 6.BiLstmTextRelationTwoRNN
-structure: one bi-directional lstm for one sentence(get output1), another bi-directional lstm for another sentence(get output2). then:
+Structure: one bi-directional lstm for one sentence(get output1), another bi-directional lstm for another sentence(get output2). then:
 softmax(output1*M*output2)
 
 check:p9_BiLstmTextRelationTwoRNN_model.py
@@ -107,7 +110,7 @@ for more detail you can go to: <a herf="http://www.wildml.com/2016/07/deep-learn
 
 
 7.RCNN:
-recurrent convolutional neural network for text classification
+Recurrent convolutional neural network for text classification
 
 implementation of <a href="https://scholar.google.com.hk/scholar?q=Recurrent+Convolutional+Neural+Networks+for+Text+Classification&hl=zh-CN&as_sdt=0&as_vis=1&oi=scholart&sa=X&ved=0ahUKEwjpx82cvqTUAhWHspQKHUbDBDYQgQMIITAA"> Recurrent Convolutional Neural Network for Text Classification </a>
  
@@ -120,6 +123,27 @@ representation current word=[left_side_context_vector,current_word_embedding,rig
 for left side context, it use a recurrent structure, a no-linearity transfrom of previous word and left side previous context; similarly to right side context.
 
 check: p71_TextRCNN_model.py
+
+
+-------------------------------------------------------------------------
+
+8.Hierarchical Attention Network:
+
+Implementation of <a href="https://www.cs.cmu.edu/~diyiy/docs/naacl16.pdf">Hierarchical Attention Networks for Document Classification</a>
+
+Structure:
+
+1)embedding 
+
+2) Word Encoder: word level bi-directional GRU to get rich representation of words
+
+3) Word Attention:word level attention to get important information in a sentence
+
+4) Sentence Encoder: sentence level bi-directional GRU to get rich representation of sentences
+
+5) Sentence Attetion: sentence level attention to get important sentence among sentences
+
+5) FC+Softmax
 
 
 -------------------------------------------------------------------------
