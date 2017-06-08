@@ -142,6 +142,13 @@ Structure:
 
 5) FC+Softmax
 
+
+Input of data: 
+
+Generally speaking, input of this model should have serveral sentences instead of sinle sentence. shape is:[None,sentence_lenght]. where None means the batch_size.
+
+In my training data, for each example, i have four parts. each part has same length. i concat four parts to form one single sentence. the model will split the sentence into four parts, to form a tensor with shape:[None,num_sentence,sentence_length]. where num_sentence is number of sentences(equal to 4, in my setting).
+
 check:p1_HierarchicalAttention_model.py
 
 -------------------------------------------------------------------------
