@@ -191,9 +191,6 @@ class HierarchicalAttention:
         :return:
         """
         # update gate: decides how much past information is kept and how much new information is added.
-        print("1Xt:",Xt," ;self.W_z:",self.W_z) #'1Xt:', <tf.Tensor 'Squeeze_100:0' shape=(?, 100) dtype=float32>, ' ;self.W_z:', <tf.Variable 'W_z:0' shape=(100, 100) dtype=float32_ref>)
-        print("2h_t_minus_1:",h_t_minus_1,"U_z",self.U_z) #'2h_t_minus_1:', <tf.Tensor 'add_1392:0' shape=(2048, 100) dtype=float32>, 'U_z', <tf.Variable 'U_z:0' shape=(100, 100) dtype=float32_ref>)
-        print("3self.b_z:",self.b_z) # shape=(100,)
         z_t = tf.nn.sigmoid(tf.matmul(Xt, self.W_z) + tf.matmul(h_t_minus_1, self.U_z) + self.b_z)  # z_t:[batch_size*num_sentences,self.hidden_size]
         # reset gate: controls how much the past state contributes to the candidate state.
         r_t = tf.nn.sigmoid(tf.matmul(Xt, self.W_r) + tf.matmul(h_t_minus_1, self.U_r) + self.b_r)  # r_t:[batch_size*num_sentences,self.hidden_size]
