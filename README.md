@@ -166,4 +166,18 @@ TODO
 
 -------------------------------------------------------------------------
 
+Reference:
+
+1.Bag of Tricks for Efficient Text Classification
+
+2.Convolutional Neural Networks for Sentence Classification
+
+3.Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow, from www.wildml.com
+
+4.Recurrent Convolutional Neural Network for Text Classification
+
+5.Hierarchical Attention Networks for Document Classification
+
+-------------------------------------------------------------------------
+
 to be continued. for any problem, concat brightmart@hotmail.com
