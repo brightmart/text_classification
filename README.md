@@ -153,5 +153,17 @@ check:p1_HierarchicalAttention_model.py
 
 -------------------------------------------------------------------------
 
+TODO 
+
+1.Character-level Convolutional Networks for Text Classification
+
+2.Very Deep Convolutional Networks for Text Classification
+
+3.Seq2seq with attention
+
+4.Memory network
+
+
+-------------------------------------------------------------------------
 
 to be continued. for any problem, concat brightmart@hotmail.com
