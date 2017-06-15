@@ -1,4 +1,4 @@
-# text_classification
+Text Classification
 the purpose of this repository is explore text classification methods in NLP with deep learning. 
 
 it has all kinds of baseline models for text classificaiton.
@@ -154,6 +154,7 @@ check:p1_HierarchicalAttention_model.py
 -------------------------------------------------------------------------
 
 9.Seq2seq with attention
+
 Implementation seq2seq with attention derived from <a href="https://arxiv.org/pdf/1409.0473.pdf">NEURAL MACHINE TRANSLATION BY JOINTLY LEARNING TO ALIGN AND TRANSLATE</a>
 
 I.Structure:1)embedding 2)bi-GRU too get rich representation from source sentences(forward & backward). 3)decoder with attention.
