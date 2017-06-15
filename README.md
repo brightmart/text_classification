@@ -11,7 +11,7 @@ Model including:
 
 1)fastText 2)TextCNN 3)TextRNN 4)BiLstmTextRelation 5)twoCNNTextRelation 6)BiLstmTextRelationTwoRNN 
 
-7)RCNN 8)Hierarchical Attention Network
+7)RCNN 8)Hierarchical Attention Network 9)seq2seq with attention
 
 -------------------------------------------------------------------------
 
@@ -150,6 +150,44 @@ Generally speaking, input of this model should have serveral sentences instead o
 In my training data, for each example, i have four parts. each part has same length. i concat four parts to form one single sentence. the model will split the sentence into four parts, to form a tensor with shape:[None,num_sentence,sentence_length]. where num_sentence is number of sentences(equal to 4, in my setting).
 
 check:p1_HierarchicalAttention_model.py
+
+-------------------------------------------------------------------------
+
+9.Seq2seq with attention
+Implementation seq2seq with attention derived from <a href="https://arxiv.org/pdf/1409.0473.pdf">NEURAL MACHINE TRANSLATION BY JOINTLY LEARNING TO ALIGN AND TRANSLATE</a>
+
+structure:1)embedding 2)bi-GRU too get rich representation from source sentences(forward & backward). 3)decoder with attention.
+
+Input of data:
+
+there are two kinds of three kinds of inputs:1)encoder inputs, which is a sentence; 2)decoder inputs, it is labels list with fixed length;3)target labels, it is also a list of labels.
+for example, labels is:"L1 L2 L3 L4", then decoder inputs will be:[_GO,L1,L2,L2,L3,_PAD]; target label will be:[L1,L2,L3,L3,_END,_PAD]. length is fixed to 6, any exceed labels will be trancated, will pad if label is not enough to fill.
+
+Attention Mechanism:
+
+1) transfer encoder input list and hidden state of decoder
+
+2) calculate similiarity of hidden state with each encoder input, to get possibility distribution for each encoder input.
+
+3) weighted sum of encoder input based on possibility distribution.
+
+go though RNN Cell using this weight sum together with decoder input to get new hidden state
+
+How Vanilla Encoder Decoder Works:
+the source sentence will be encoded using RNN as fixed size vector ("thought vector"). then during decoder
+1) when it is training, another RNN will be used to try to get a word by using this "thought vector"  as init state, and take input from decoder input at each timestamp. decoder start from special token "_GO". 
+
+after one step is performanced, new hidden state will be get and together with new input, we can continue this process until we reach to a special token "_END". 
+
+we can calculate loss by compute cross entropy loss of logits and target label. logits is get through a projection layer for the hidden state(for output of decoder step(in GRU we can just use hidden states from decoder as output).
+
+2) when it is testing, there is no label. so we should feed the output we get from previous timestamp, and continue the process util we reached "_END" TOKEN.
+
+Notices:
+
+1) here i use two kinds of vocabularies. one is from words,used by encoder; another is for labels,used by decoder
+
+2) for vocabulary of lables, i insert three special token:"_GO","_END","_PAD"; "_UNK" is not used, since all labels is pre-defined.
 
 -------------------------------------------------------------------------
 
