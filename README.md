@@ -157,7 +157,9 @@ check:p1_HierarchicalAttention_model.py
 
 Implementation seq2seq with attention derived from <a href="https://arxiv.org/pdf/1409.0473.pdf">NEURAL MACHINE TRANSLATION BY JOINTLY LEARNING TO ALIGN AND TRANSLATE</a>
 
-I.Structure:1)embedding 2)bi-GRU too get rich representation from source sentences(forward & backward). 3)decoder with attention.
+I.Structure:
+
+1)embedding 2)bi-GRU too get rich representation from source sentences(forward & backward). 3)decoder with attention.
 
 II.Input of data:
 
@@ -180,9 +182,7 @@ IV.How Vanilla Encoder Decoder Works:
 the source sentence will be encoded using RNN as fixed size vector ("thought vector"). then during decoder:
 
 1) when it is training, another RNN will be used to try to get a word by using this "thought vector"  as init state, and take input from decoder input at each timestamp. decoder start from special token "_GO". 
-
 after one step is performanced, new hidden state will be get and together with new input, we can continue this process until we reach to a special token "_END". 
-
 we can calculate loss by compute cross entropy loss of logits and target label. logits is get through a projection layer for the hidden state(for output of decoder step(in GRU we can just use hidden states from decoder as output).
 
 2) when it is testing, there is no label. so we should feed the output we get from previous timestamp, and continue the process util we reached "_END" TOKEN.
