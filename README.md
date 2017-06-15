@@ -156,14 +156,15 @@ check:p1_HierarchicalAttention_model.py
 9.Seq2seq with attention
 Implementation seq2seq with attention derived from <a href="https://arxiv.org/pdf/1409.0473.pdf">NEURAL MACHINE TRANSLATION BY JOINTLY LEARNING TO ALIGN AND TRANSLATE</a>
 
-structure:1)embedding 2)bi-GRU too get rich representation from source sentences(forward & backward). 3)decoder with attention.
+I.Structure:1)embedding 2)bi-GRU too get rich representation from source sentences(forward & backward). 3)decoder with attention.
 
-Input of data:
+II.Input of data:
 
 there are two kinds of three kinds of inputs:1)encoder inputs, which is a sentence; 2)decoder inputs, it is labels list with fixed length;3)target labels, it is also a list of labels.
+
 for example, labels is:"L1 L2 L3 L4", then decoder inputs will be:[_GO,L1,L2,L2,L3,_PAD]; target label will be:[L1,L2,L3,L3,_END,_PAD]. length is fixed to 6, any exceed labels will be trancated, will pad if label is not enough to fill.
 
-Attention Mechanism:
+III.Attention Mechanism:
 
 1) transfer encoder input list and hidden state of decoder
 
@@ -171,10 +172,12 @@ Attention Mechanism:
 
 3) weighted sum of encoder input based on possibility distribution.
 
-go though RNN Cell using this weight sum together with decoder input to get new hidden state
+   go though RNN Cell using this weight sum together with decoder input to get new hidden state
 
-How Vanilla Encoder Decoder Works:
-the source sentence will be encoded using RNN as fixed size vector ("thought vector"). then during decoder
+IV.How Vanilla Encoder Decoder Works:
+
+the source sentence will be encoded using RNN as fixed size vector ("thought vector"). then during decoder:
+
 1) when it is training, another RNN will be used to try to get a word by using this "thought vector"  as init state, and take input from decoder input at each timestamp. decoder start from special token "_GO". 
 
 after one step is performanced, new hidden state will be get and together with new input, we can continue this process until we reach to a special token "_END". 
@@ -183,7 +186,7 @@ we can calculate loss by compute cross entropy loss of logits and target label. 
 
 2) when it is testing, there is no label. so we should feed the output we get from previous timestamp, and continue the process util we reached "_END" TOKEN.
 
-Notices:
+V.Notices:
 
 1) here i use two kinds of vocabularies. one is from words,used by encoder; another is for labels,used by decoder
 
@@ -197,9 +200,7 @@ TODO
 
 2.Very Deep Convolutional Networks for Text Classification
 
-3.Seq2seq with attention
-
-4.Memory network
+3.Memory network
 
 
 -------------------------------------------------------------------------
