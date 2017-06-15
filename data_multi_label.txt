@@ -1,0 +1,4 @@
+xxx1 xxx2 xxx3 xxx4 xxx5 __label__L11 L09 L03
+xxx2 xxx2 xxx3 xxx4 xxx6 __label__L20 L11 L21 L24
+xxx0 xxx2 xxx3 xxx4 xxx2 __label__L1  L2
+xxx0 xxx1 xxx3 xxx4 xxx1 __label__L31 L2 L31
