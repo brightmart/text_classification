@@ -7,9 +7,11 @@ import os
 import pickle
 PAD_ID = 0
 from tflearn.data_utils import pad_sequences
-
+_GO="_GO"
+_END="_END"
+_PAD="_PAD"
 def create_voabulary(simple=None,word2vec_model_path='zhihu-word2vec-title-desc.bin-100',name_scope=''): #zhihu-word2vec-multilabel.bin-100
-    cache_path = name_scope + "_word_voabulary.pik"
+    cache_path ='cache_vocabulary_label_pik/'+ name_scope + "_word_voabulary.pik"
     print("cache_path:",cache_path,"file_exists:",os.path.exists(cache_path))
     if os.path.exists(cache_path):#如果缓存文件存在，则直接读取
         with open(cache_path, 'r') as data_f:
@@ -40,10 +42,9 @@ def create_voabulary(simple=None,word2vec_model_path='zhihu-word2vec-title-desc.
     return vocabulary_word2index,vocabulary_index2word
 
 # create vocabulary of lables. label is sorted. 1 is high frequency, 2 is low frequency.
-def create_voabulary_label(voabulary_label='train-zhihu4-only-title-all.txt',name_scope=''):#'train-zhihu.txt'
+def create_voabulary_label(voabulary_label='train-zhihu4-only-title-all.txt',name_scope='',use_seq2seq=False):#'train-zhihu.txt'
     print("create_voabulary_label_sorted.started.traning_data_path:",voabulary_label)
-
-    cache_path = name_scope + "_label_voabulary.pik"
+    cache_path ='cache_vocabulary_label_pik/'+ name_scope + "_label_voabulary.pik"
     if os.path.exists(cache_path):#如果缓存文件存在，则直接读取
         with open(cache_path, 'r') as data_f:
             vocabulary_word2index_label, vocabulary_index2word_label=pickle.load(data_f)
@@ -55,7 +56,6 @@ def create_voabulary_label(voabulary_label='train-zhihu4-only-title-all.txt',nam
         vocabulary_word2index_label={}
         vocabulary_index2word_label={}
         vocabulary_label_count_dict={} #{label:count}
-        #label_unique={}
         for i,line in enumerate(lines):
             if '__label__' in line:  #'__label__-2051131023989903826
                 label=line[line.index('__label__')+len('__label__'):].strip().replace("\n","")
@@ -67,22 +67,36 @@ def create_voabulary_label(voabulary_label='train-zhihu4-only-title-all.txt',nam
 
         print("length of list_label:",len(list_label));#print(";list_label:",list_label)
         countt=0
+
+        ##########################################################################################
+        if use_seq2seq:#if used for seq2seq model,insert two special label(token):_GO AND _END
+            i_list=[0,1,2];label_special_list=[_GO,_END,_PAD]
+            for i,label in zip(i_list,label_special_list):
+                vocabulary_word2index_label[label] = i
+                vocabulary_index2word_label[i] = label
+        #########################################################################################
         for i,label in enumerate(list_label):
             if i<10:
                 count_value=vocabulary_label_count_dict[label]
                 print("label:",label,"count_value:",count_value)
                 countt=countt+count_value
-            vocabulary_word2index_label[label]=i
-            vocabulary_index2word_label[i]=label
+            indexx = i + 3 if use_seq2seq else i
+            vocabulary_word2index_label[label]=indexx
+            vocabulary_index2word_label[indexx]=label
         print("count top10:",countt)
 
         #save to file system if vocabulary of words is not exists.
         if not os.path.exists(cache_path): #如果不存在写到缓存文件中
             with open(cache_path, 'a') as data_f:
                 pickle.dump((vocabulary_word2index_label,vocabulary_index2word_label), data_f)
-    print("create_voabulary_label_sorted.ended.")
+    print("create_voabulary_label_sorted.ended.len of vocabulary_label:",len(vocabulary_index2word_label))
     return vocabulary_word2index_label,vocabulary_index2word_label
 
+def sort_by_value(d):
+    items=d.items()
+    backitems=[[v[1],v[0]] for v in items]
+    backitems.sort(reverse=True)
+    return [ backitems[i][1] for i in range(0,len(backitems))]
 
 def create_voabulary_labelO():
     model = word2vec.load('zhihu-word2vec-multilabel.bin-100', kind='bin') #zhihu-word2vec.bin-100
@@ -101,7 +115,7 @@ def create_voabulary_labelO():
     return vocabulary_word2index_label,vocabulary_index2word_label
 
 def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,valid_portion=0.05,max_training_data=1000000,
-                             traning_data_path='train-zhihu4-only-title-all.txt',multi_label_flag=True):  # n_words=100000,
+                             traning_data_path='train-zhihu4-only-title-all.txt',multi_label_flag=True,use_seq2seq=False,seq2seq_label_length=6):  # n_words=100000,
     """
     input: a file path
     :return: train, test, valid. where train=(trainX, trainY). where
@@ -117,6 +131,7 @@ def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,v
     # 3.transform  y as scalar
     X = []
     Y = []
+    Y_decoder_input=[] #ADD 2017-06-15
     for i, line in enumerate(lines):
         x, y = line.split('__label__') #x='w17314 w5521 w7729 w767 w10147 w111'
         y=y.strip().replace('\n','')
@@ -128,21 +143,47 @@ def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,v
         x = [vocabulary_word2index.get(e,0) for e in x] #if can't find the word, set the index as '0'.(equal to PAD_ID = 0)
         if i<2:
             print(i,"x1:",x) #word to index
-        if multi_label_flag:
-            ys = y.replace('\n', '').split(" ") #ys is a list
-            ys_index=[]
-            for y in ys:
-                y_index = vocabulary_word2index_label[y]
-                ys_index.append(y_index)
-            ys_mulithot_list=transform_multilabel_as_multihot(ys_index)
+        if use_seq2seq:        # 1)prepare label for seq2seq format(ADD _GO,_END,_PAD for seq2seq)
+            ys = y.replace('\n', '').split(" ")  # ys is a list
+            _PAD_INDEX=vocabulary_word2index_label[_PAD]
+            ys_mulithot_list=[_PAD_INDEX]*seq2seq_label_length #[3,2,11,14,1]
+            ys_decoder_input=[_PAD_INDEX]*seq2seq_label_length
+            # below is label.
+            for j,y in enumerate(ys):
+                if i<seq2seq_label_length-1:
+                    ys_mulithot_list[j]=vocabulary_word2index_label[y]
+            if len(ys)>seq2seq_label_length-1:
+                ys_mulithot_list[seq2seq_label_length-1]=vocabulary_word2index_label[_END]#ADD END TOKEN
+            else:
+                ys_mulithot_list[len(ys)] = vocabulary_word2index_label[_END]
+
+            # below is input for decoder.
+            ys_decoder_input[0]=vocabulary_word2index_label[_GO]
+            for j,y in enumerate(ys):
+                if i < seq2seq_label_length - 1:
+                    ys_decoder_input[j+1]=vocabulary_word2index_label[y]
+            if i<3:
+                print("ys:==========>0", ys)
+                print("ys_mulithot_list:==============>1", ys_mulithot_list)
+                print("ys_decoder_input:==============>2", ys_decoder_input)
         else:
-            ys_mulithot_list=vocabulary_word2index_label[y]
-        if i<=10:
+            if multi_label_flag: # 2)prepare multi-label format for classification
+                ys = y.replace('\n', '').split(" ")  # ys is a list
+                ys_index=[]
+                for y in ys:
+                    y_index = vocabulary_word2index_label[y]
+                    ys_index.append(y_index)
+                ys_mulithot_list=transform_multilabel_as_multihot(ys_index)
+            else:                #3)prepare single label format for classification
+                ys_mulithot_list=vocabulary_word2index_label[y]
+        if i<=3:
             print("ys_index:")
-            print(ys_index)
-            print(i,"y:",y,"ys_mulithot_list:",ys_mulithot_list)
+            #print(ys_index)
+            print(i,"y:",y," ;ys_mulithot_list:",ys_mulithot_list," ;ys_decoder_input:",ys_decoder_input)
         X.append(x)
         Y.append(ys_mulithot_list)
+        if use_seq2seq:
+            Y_decoder_input.append(ys_decoder_input)
         #if i>50000:
         #    break
     # 4.split to train,test and valid data
@@ -150,6 +191,9 @@ def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,v
     print("number_examples:",number_examples) #
     train = (X[0:int((1 - valid_portion) * number_examples)], Y[0:int((1 - valid_portion) * number_examples)])
     test = (X[int((1 - valid_portion) * number_examples) + 1:], Y[int((1 - valid_portion) * number_examples) + 1:])
+    if use_seq2seq:
+        train=train+(Y_decoder_input[0:int((1 - valid_portion) * number_examples)],)
+        test=test+(Y_decoder_input[int((1 - valid_portion) * number_examples) + 1:],)
     # 5.return
     print("load_data.ended...")
     return train, test, test
@@ -405,12 +449,6 @@ def proces_label_to_algin(ys_list,require_size=5):
        elif len(ys_list) == 4:
            ys_list_result = [ys_list[0], ys_list[0], ys_list[1], ys_list[2], ys_list[3]]
     return ys_list_result
-
-def sort_by_value(d):
-    items=d.items()
-    backitems=[[v[1],v[0]] for v in items]
-    backitems.sort(reverse=True)
-    return [ backitems[i][1] for i in range(0,len(backitems))]
 
 def write_uigram_to_trigram():
     pass
