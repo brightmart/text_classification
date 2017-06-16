@@ -199,9 +199,11 @@ TODO
 
 1.Character-level Convolutional Networks for Text Classification
 
-2.Very Deep Convolutional Networks for Text Classification
+2.Convolutional Neural Networks for Text Categorization:Shallow Word-level vs. Deep Character-level
 
-3.Memory network
+3.Very Deep Convolutional Networks for Text Classification
+
+4.Memory network
 
 
 -------------------------------------------------------------------------
