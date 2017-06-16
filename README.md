@@ -205,6 +205,8 @@ TODO
 
 4.Memory network
 
+5.Adversarial Training Methods For Semi-supervised Text Classification
+
 
 -------------------------------------------------------------------------
 
