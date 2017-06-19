@@ -179,11 +179,11 @@ def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,v
         if i<=3:
             print("ys_index:")
             #print(ys_index)
-            print(i,"y:",y," ;ys_mulithot_list:",ys_mulithot_list," ;ys_decoder_input:",ys_decoder_input)
+            print(i,"y:",y," ;ys_mulithot_list:",ys_mulithot_list) #," ;ys_decoder_input:",ys_decoder_input)
         X.append(x)
         Y.append(ys_mulithot_list)
         if use_seq2seq:
-            Y_decoder_input.append(ys_decoder_input)
+            Y_decoder_input.append(ys_decoder_input) #decoder input
         #if i>50000:
         #    break
     # 4.split to train,test and valid data

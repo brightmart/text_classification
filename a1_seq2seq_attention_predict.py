@@ -83,8 +83,9 @@ def main(_):
         number_of_training_data=len(testX2);print("number_of_training_data:",number_of_training_data)
         index=0
         predict_target_file_f = codecs.open(FLAGS.predict_target_file, 'a', 'utf8')
+        decoder_input=np.reshape(np.array([vocabulary_word2index_label[_GO]]+[vocabulary_word2index_label[_PAD]]*(FLAGS.decoder_sent_length-1)),[-1,FLAGS.decoder_sent_length])
         for start, end in zip(range(0, number_of_training_data, FLAGS.batch_size),range(FLAGS.batch_size, number_of_training_data+1, FLAGS.batch_size)):
-            logits=sess.run(model.logits,feed_dict={model.input_x:testX2[start:end],model.dropout_keep_prob:1}) #'shape of logits:', ( 1, 1999)
+            logits=sess.run(model.logits,feed_dict={model.input_x:testX2[start:end],model.decoder_input:decoder_input,model.dropout_keep_prob:1}) #'shape of logits:', ( 1, 1999)
             # 6. get lable using logtis
             #print("logits:",logits)
             predicted_labels=get_label_using_logits(logits[0],vocabulary_index2word_label,vocabulary_word2index_label)
@@ -94,7 +95,7 @@ def main(_):
         predict_target_file_f.close()
 
 def get_label_using_logits(logits, vocabulary_index2word_label,vocabulary_word2index_label, top_number=5):
-    print("logits:",logits) #(6, 2002)
+    print("logits:",logits.shape) #(6, 2002)
     list_index=np.argmax(logits,axis=1) #[FLAGS.decoder_sent_length]
     #print("list_index:",list_index)
     list_index=list(list_index)
@@ -104,7 +105,7 @@ def get_label_using_logits(logits, vocabulary_index2word_label,vocabulary_word2i
     result_list=[]
     for index in list_index:
         word=vocabulary_index2word_label[index]
-        #print("index:",index,";word:",word) #('index:', 2, ';word:', '_PAD')
+        print("index:",index,";word:",word) #('index:', 2, ';word:', '_PAD')
         result_list.append(word)
     return result_list
 

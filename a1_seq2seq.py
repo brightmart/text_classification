@@ -23,7 +23,7 @@ def extract_argmax_and_embed(embedding, output_projection=None):
 def rnn_decoder_with_attention(decoder_inputs, initial_state, cell, loop_function,attention_states,scope=None):#3D Tensor [batch_size x attn_length x attn_size]
     """RNN decoder for the sequence-to-sequence model.
     Args:
-        decoder_inputs: A list of 2D Tensors [batch_size x input_size].it is target Y, but shift by one.
+        decoder_inputs: A list of 2D Tensors [batch_size x input_size].it is decoder input.
         initial_state: 2D Tensor with shape [batch_size x cell.state_size].it is the encoded vector of input sentences, which represent 'thought vector'
         cell: core_rnn_cell.RNNCell defining the cell function and size.
         loop_function: If not None, this function will be applied to the i-th output
@@ -34,7 +34,7 @@ def rnn_decoder_with_attention(decoder_inputs, initial_state, cell, loop_functio
                 * prev is a 2D Tensor of shape [batch_size x output_size],
                 * i is an integer, the step number (when advanced control is needed),
                 * next is a 2D Tensor of shape [batch_size x input_size].
-        attention_states: 3D Tensor [batch_size x attn_length x attn_size].it is a input X.
+        attention_states: 3D Tensor [batch_size x attn_length x attn_size].it is represent input X.
         scope: VariableScope for the created subgraph; defaults to "rnn_decoder".
     Returns:
         A tuple of the form (outputs, state), where:
@@ -47,16 +47,13 @@ def rnn_decoder_with_attention(decoder_inputs, initial_state, cell, loop_functio
     """
     with tf.variable_scope(scope or "rnn_decoder"):
         print("rnn_decoder_with_attention started...")
-        state = initial_state  #[batch_size x cell.state_size]
-        _, hidden_size = state.get_shape().as_list()
+        state = initial_state  #[batch_size x cell.state_size].
+        _, hidden_size = state.get_shape().as_list() #200
         attention_states_original=attention_states
-        batch_size,sequence_length,embed_size=attention_states.get_shape().as_list()
+        batch_size,sequence_length,_=attention_states.get_shape().as_list()
         outputs = []
         prev = None
-        W_a = tf.get_variable("W_a", shape=[embed_size, hidden_size],initializer=tf.random_normal_initializer(stddev=0.1))
-        attention_states=tf.reshape(attention_states,shape=(-1,embed_size)) #attention_states:[batch_size*sequence_length,embed_size]
-        attention_states = tf.nn.tanh(tf.matmul(attention_states, W_a)) #attention_states:[batch_size*sequence_length,hidden_size]
-        attention_states=tf.reshape(attention_states,shape=(-1,sequence_length,hidden_size)) #attention_states:[batch_size,sequence_length,hidden_size]
+        #################################################
         for i, inp in enumerate(decoder_inputs):#循环解码部分的输入。如sentence_length个[batch_size x input_size]
             # 如果是训练，使用训练数据的输入；如果是test, 将t时刻的输出作为t + 1 时刻的s输入
             if loop_function is not None and prev is not None:#测试的时候：如果loop_function不为空且前一个词的值不为空，那么使用前一个的值作为RNN的输入
@@ -65,15 +62,29 @@ def rnn_decoder_with_attention(decoder_inputs, initial_state, cell, loop_functio
             if i > 0:
                 tf.get_variable_scope().reuse_variables()
             ##ATTENTION#################################################################################################################################################
-            # 1.use Full connected layer to match dimension for two parts of attention.<Wx*X,Wy*y>
-            W_s = tf.get_variable("W_s_attention", shape=[hidden_size, hidden_size], initializer=tf.random_normal_initializer(stddev=0.1))
+            # 1.get logits of attention for each encoder input. attention_states:[batch_size x attn_length x attn_size]; query=state:[batch_size x cell.state_size]
+            query=state
+            W_a = tf.get_variable("W_a", shape=[hidden_size, hidden_size],initializer=tf.random_normal_initializer(stddev=0.1))
+            query=tf.matmul(query, W_a) #[batch_size,hidden_size]
+            query=tf.expand_dims(query,axis=1) #[batch_size, 1, hidden_size]
+            U_a = tf.get_variable("U_a", shape=[hidden_size, hidden_size],initializer=tf.random_normal_initializer(stddev=0.1))
+            U_aa = tf.get_variable("U_aa", shape=[ hidden_size])
+            attention_states=tf.reshape(attention_states,shape=(-1,hidden_size)) #[batch_size*sentence_length,hidden_size]
+            attention_states=tf.matmul(attention_states, U_a) #[batch_size*sentence_length,hidden_size]
+            #print("attention_states:", attention_states) #(?, 200)
+            print("batch_size",batch_size," ;sequence_length:",sequence_length," ;hidden_size:",hidden_size)
+            attention_states=tf.reshape(attention_states,shape=(-1,sequence_length,hidden_size)) # TODO [batch_size,sentence_length,hidden_size]
+            #query_expanded:            [batch_size,1,             hidden_size]
+            #attention_states_reshaped: [batch_size,sentence_length,hidden_size]
+            attention_logits=tf.nn.tanh(query+attention_states+U_aa) #[batch_size,sentence_length,hidden_size]
 
-            state_transfered=tf.nn.tanh(tf.matmul(state,W_s))
-            # 2.get possibility attention for each encoder input. attention_states:[batch_size x attn_length x attn_size]; query=state:[batch_size x cell.state_size]
-            query=tf.expand_dims(state_transfered,axis=1)                        #[batch_size x 1 x cell.state_size]
-            # get logits using attention_states and query
-            attention_logits=tf.multiply(attention_states,query)      #TODO [batch_size x attn_length x attn_size]. notice: cell.state_size=atten_size=embedding_size
-            attention_logits=tf.reduce_sum(attention_logits,2)        #[batch_size x attn_length]
+            # 2.get possibility of attention
+            attention_logits=tf.reshape(attention_logits,shape=(-1,hidden_size)) #batch_size*sequence_length [batch_size*sentence_length,hidden_size]
+            V_a = tf.get_variable("V_a", shape=[hidden_size,1],initializer=tf.random_normal_initializer(stddev=0.1)) #[hidden_size,1]
+            attention_logits=tf.matmul(attention_logits,V_a) #最终需要的是[batch_size*sentence_length,1]<-----[batch_size*sentence_length,hidden_size],[hidden_size,1]
+            attention_logits=tf.reshape(attention_logits,shape=(-1,sequence_length)) #attention_logits:[batch_size,sequence_length]
+            ##########################################################################################################################################################
+            #attention_logits=tf.reduce_sum(attention_logits,2)        #[batch_size x attn_length]
             attention_logits_max=tf.reduce_max(attention_logits,axis=1,keep_dims=True) #[batch_size x 1]
             # possibility distribution for each encoder input.it means how much attention or focus for each encoder input
             p_attention=tf.nn.softmax(attention_logits-attention_logits_max)#[batch_size x attn_length]
@@ -81,13 +92,11 @@ def rnn_decoder_with_attention(decoder_inputs, initial_state, cell, loop_functio
             # 3.get weighted sum of hidden state for each encoder input as attention state
             p_attention=tf.expand_dims(p_attention,axis=2)            #[batch_size x attn_length x 1]
             # attention_states:[batch_size x attn_length x attn_size]; p_attention:[batch_size x attn_length];
-            # final attention
             attention_final=tf.multiply(attention_states_original,p_attention) #[batch_size x attn_length x attn_size]
-            attention_final=tf.reduce_sum(attention_final,axis=1)     #[batch_size x attn_size]
+            context_vector=tf.reduce_sum(attention_final,axis=1)     #[batch_size x attn_size]
             ############################################################################################################################################################
-            print("attention_final:",attention_final,";state:",state,";inp:",inp)
-            #attention_final: (?, 100) ;state:(?, 200);inp:shape=(?, 200)
-            output, state = cell(attention_final, state)          #使用RNN走一步
+            #inp:[batch_size x input_size].it is decoder input;  attention_final:[batch_size x attn_size]
+            output, state = cell(inp, state,context_vector)          #attention_final TODO 使用RNN走一步
             outputs.append(output) # 将输出添加到结果列表中
             if loop_function is not None:
                 prev = output
