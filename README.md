@@ -222,6 +222,8 @@ Reference:
 
 5.Hierarchical Attention Networks for Document Classification
 
+6.Neural Machine Translation by Jointly Learning to Align and Translate
+
 -------------------------------------------------------------------------
 
 to be continued. for any problem, concat brightmart@hotmail.com
