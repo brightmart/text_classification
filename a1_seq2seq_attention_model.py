@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-# seq2seq_attention: 1.word embedding 2.encoder 3.decoder(optional with attention)
+# seq2seq_attention: 1.word embedding 2.encoder 3.decoder(optional with attention). for more detail, please check:Neural Machine Translation By Jointly Learning to Align And Translate
 import tensorflow as tf
 import numpy as np
 import tensorflow.contrib as tf_contrib
 import random
+import copy
 from a1_seq2seq import rnn_decoder_with_attention,extract_argmax_and_embed
 
 class seq2seq_attention_model:
@@ -80,8 +81,10 @@ class seq2seq_attention_model:
         outputs, final_state=rnn_decoder_with_attention(decoder_input_squeezed, initial_state, cell, loop_function, attention_states, scope=None) # A list.length:decoder_sent_length.each element is:[batch_size x output_size]
         decoder_output=tf.stack(outputs,axis=1) #decoder_output:[batch_size,decoder_sent_length,hidden_size*2]
         decoder_output=tf.reshape(decoder_output,shape=(-1,self.hidden_size*2)) #decoder_output:[batch_size*decoder_sent_length,hidden_size*2]
+
         #with tf.name_scope("dropout"):
         #    decoder_output_ = tf.nn.dropout(decoder_output,keep_prob=self.dropout_keep_prob)  # shape:[None,hidden_size*4]
+        # 4. get logits
         with tf.name_scope("output"):
             logits = tf.matmul(decoder_output, self.W_projection) + self.b_projection  # logits shape:[batch_size*decoder_sent_length,self.num_classes]==tf.matmul([batch_size*decoder_sent_length,hidden_size*2],[hidden_size*2,self.num_classes])
             logits=tf.reshape(logits,shape=(self.batch_size,self.decoder_sent_length,self.num_classes)) #logits shape:[batch_size,decoder_sent_length,self.num_classes]
@@ -90,23 +93,18 @@ class seq2seq_attention_model:
 
     def loss_seq2seq(self):
         with tf.name_scope("loss"):
-            #y=tf.one_hot(self.input_y_label,depth=self.num_classes) #y:[None, self.decoder_sent_length,self.num_classes]<----self.input_y_label:[None, self.decoder_sent_length]
-            #loss=tf.reduce_mean(-1.0*y*tf.log(self.logits+1e-10))/self.batch_size
-            ###############################################################################################################################
             #input: `logits` and `labels` must have the same shape `[batch_size, num_classes]`
             #output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
             losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_y_label, logits=self.logits);#losses:[batch_size,self.decoder_sent_length]
             loss_batch=tf.reduce_sum(losses,axis=1)/self.decoder_sent_length #loss_batch:[batch_size]
             loss=tf.reduce_mean(loss_batch)
-            ################################################################################################################################
             l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * self.l2_lambda
             loss = loss + l2_losses
             return loss
 
     def train(self):
         """based on the loss, use SGD to update parameter"""
-        learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps,
-                                                   self.decay_rate, staircase=True)
+        learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps,self.decay_rate, staircase=True)
         self.learning_rate_=learning_rate
         #noise_std_dev = tf.constant(0.3) / (tf.sqrt(tf.cast(tf.constant(1) + self.global_step, tf.float32))) #gradient_noise_scale=noise_std_dev
         train_op = tf_contrib.layers.optimize_loss(self.loss_val, global_step=self.global_step,
@@ -135,7 +133,7 @@ class seq2seq_attention_model:
         single step of gru for word level
         :param Xt: Xt:[batch_size,embed_size]
         :param h_t_minus_1:[batch_size,embed_size]
-        :param context_vector. [batch_size,embed_size]ci,which represent the attention result( weighted sum of input during current decoding step)
+        :param context_vector. [batch_size,embed_size].this represent the result from attention( weighted sum of input during current decoding step)
         :return:
         """
         # 1.update gate: decides how much past information is kept and how much new information is added.
@@ -147,24 +145,6 @@ class seq2seq_attention_model:
         # new state: a linear combine of pervious hidden state and the current new state h_t~
         h_t = (1 - z_t) * h_t_minus_1 + z_t * h_t_candiate  # h_t:[batch_size*num_sentences,hidden_size]
         return h_t,h_t
-
-    def gru_cell_decoderOLD(self, Xt, h_t_minus_1):# WILL BE REMOVED SOON
-        """
-        single step of gru for word level
-        :param Xt: Xt:[batch_size,embed_size]
-        :param h_t_minus_1:[batch_size,embed_size]
-        :return:
-        """
-        # 1.update gate: decides how much past information is kept and how much new information is added.
-        z_t = tf.nn.sigmoid(tf.matmul(Xt, self.W_z_decoder) + tf.matmul(h_t_minus_1,self.U_z_decoder) + self.b_z_decoder)  # z_t:[batch_size,self.hidden_size]
-        # 2.reset gate: controls how much the past state contributes to the candidate state.
-        r_t = tf.nn.sigmoid(tf.matmul(Xt, self.W_r_decoder) + tf.matmul(h_t_minus_1,self.U_r_decoder) + self.b_r_decoder)  # r_t:[batch_size,self.hidden_size]
-        # candiate state h_t~
-        h_t_candiate = tf.nn.tanh(tf.matmul(Xt, self.W_h_decoder) +r_t * (tf.matmul(h_t_minus_1, self.U_h_decoder)) + self.b_h_decoder)  # h_t_candiate:[batch_size,self.hidden_size]
-        # new state: a linear combine of pervious hidden state and the current new state h_t~
-        h_t = (1 - z_t) * h_t_minus_1 + z_t * h_t_candiate  # h_t:[batch_size*num_sentences,hidden_size]
-        return h_t,h_t
-
 
     # forward gru for first level: word levels
     def gru_forward(self, embedded_words,gru_cell, reverse=False):
@@ -185,7 +165,6 @@ class seq2seq_attention_model:
         if reverse:
             h_t_list.reverse()
         return h_t_list  # a list,length is sentence_length, each element is [batch_size,hidden_size]
-
 
     def instantiate_weights(self):
         """define all weights here"""
@@ -233,9 +212,7 @@ class seq2seq_attention_model:
             self.W_fc=tf.get_variable("W_fc",shape=[self.hidden_size*2,self.hidden_size])
             self.a_fc=tf.get_variable("a_fc",shape=[self.hidden_size])
 
-
 # test started: learn to output reverse sequence of itself.
-import copy
 def test():
     # below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
     num_classes = 9+2 #additional two classes:one is for _GO, another is for _END
@@ -267,6 +244,7 @@ def test():
                                                      feed_dict={model.input_x:input_x,model.decoder_input:decoder_input, model.input_y_label: input_y_label,
                                                                 model.dropout_keep_prob: dropout_keep_prob})
             print(i,"loss:", loss, "acc:", acc, "label_list_original as input x:",label_list_original,";input_y_label:", input_y_label, "prediction:", predict)
+
 def get_unique_labels():
     x=[2,3,4,5,6]
     random.shuffle(x)

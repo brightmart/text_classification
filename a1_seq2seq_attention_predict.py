@@ -85,42 +85,54 @@ def main(_):
         predict_target_file_f = codecs.open(FLAGS.predict_target_file, 'a', 'utf8')
         decoder_input=np.reshape(np.array([vocabulary_word2index_label[_GO]]+[vocabulary_word2index_label[_PAD]]*(FLAGS.decoder_sent_length-1)),[-1,FLAGS.decoder_sent_length])
         for start, end in zip(range(0, number_of_training_data, FLAGS.batch_size),range(FLAGS.batch_size, number_of_training_data+1, FLAGS.batch_size)):
-            logits=sess.run(model.logits,feed_dict={model.input_x:testX2[start:end],model.decoder_input:decoder_input,model.dropout_keep_prob:1}) #'shape of logits:', ( 1, 1999)
+            predictions,logits=sess.run([model.predictions,model.logits],feed_dict={model.input_x:testX2[start:end],model.decoder_input:decoder_input,model.dropout_keep_prob:1}) #'shape of logits:', ( 1, 1999)
             # 6. get lable using logtis
-            #print("logits:",logits)
-            predicted_labels=get_label_using_logits(logits[0],vocabulary_index2word_label,vocabulary_word2index_label)
+            predicted_labels=get_label_using_logits(logits[0],predictions,vocabulary_index2word_label,vocabulary_word2index_label)
             # 7. write question id and labels to file system.
             write_question_id_with_labels(question_id_list[index],predicted_labels,predict_target_file_f)
             index=index+1
         predict_target_file_f.close()
 
-def get_label_using_logits(logits, vocabulary_index2word_label,vocabulary_word2index_label, top_number=5):
+def get_label_using_logits(logits, predictions,vocabulary_index2word_label,vocabulary_word2index_label, top_number=5):
     print("logits:",logits.shape) #(6, 2002)
-    list_index=np.argmax(logits,axis=1) #[FLAGS.decoder_sent_length]
-    #print("list_index:",list_index)
-    list_index=list(list_index)
-    #end_index=vocabulary_word2index_label[_END]
-    #if end_index in list_index:#trancate list when meet _END token
-    #    list_index=list_index[0:list_index.index(end_index)]
     result_list=[]
-    for index in list_index:
-        word=vocabulary_index2word_label[index]
-        print("index:",index,";word:",word) #('index:', 2, ';word:', '_PAD')
-        result_list.append(word)
+    for i,row in enumerate(logits):
+        print("i,",i,"row:",row)
+        if i!=len(logits)-1: #not include result from last column, which usually it should be <END> TOKEN.
+            label=process_each_row_get_lable(row,vocabulary_index2word_label,vocabulary_word2index_label,result_list)
+            result_list.append(label)
     return result_list
 
-# get label using logits
-def get_label_using_logits0(logits,vocabulary_index2word_label,top_number=5):
-    print("logits.shape:",logits.shape)
-    index_list=np.argsort(logits)[-top_number:] #print("sum_p", np.sum(1.0 / (1 + np.exp(-logits))))
-    print("index_list:",index_list)
-    index_list=index_list[::-1]
-    label_list=[]
-    for index in index_list:
-        label=vocabulary_index2word_label[index]
-        label_list.append(label) #('get_label_using_logits.label_list:', [u'-3423450385060590478', u'2838091149470021485', u'-3174907002942471215', u'-1812694399780494968', u'6815248286057533876'])
-    return label_list
+def process_each_row_get_lable(row,vocabulary_index2word_label,vocabulary_word2index_label,result_list):
+    """
+    :param row: it is a list.length is number of labels. e.g. 2002
+    :param vocabulary_index2word_label
+    :param result_list
+    :return: a lable
+    """
+    label_list=list(np.argsort(row))
+    label_list.reverse()
+    #print("label_list:",label_list) # a list,length is number of labels.
+    for i,index in enumerate(label_list): # if index is not exists, and not _PAD,_END, then it is the label we want.
+        print(i,"index:",index)
+        flag1=vocabulary_index2word_label[index] not in result_list
+        flag2=index!=vocabulary_word2index_label[_PAD]
+        flag3=index!=vocabulary_word2index_label[_END]
+        if flag1 and flag2 and flag3:
+            print("going to return ")
+            return vocabulary_index2word_label[index]
 
+def get_label_using_logitsO(pred_list, vocabulary_index2word_label,vocabulary_word2index_label, top_number=5):
+    print("pred_list[0]:",pred_list[0]) #(6, 2002)  for example.e.g. array([ 310, 1541,   75,    1,    1,    1])
+    result_list=[]
+    pred_list_=pred_list.tolist()[0]
+    print("pred_list_:",pred_list_)
+    for index in pred_list_:
+        print("index:",index)
+        word=vocabulary_index2word_label[index]
+        print("word:",word) #('index:', 2, ';word:', '_PAD')
+        result_list.append(word)
+    return result_list
 
 # write question id and labels to file system.
 def write_question_id_with_labels(question_id,labels_list,f):

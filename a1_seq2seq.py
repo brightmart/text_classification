@@ -71,12 +71,11 @@ def rnn_decoder_with_attention(decoder_inputs, initial_state, cell, loop_functio
             U_aa = tf.get_variable("U_aa", shape=[ hidden_size])
             attention_states=tf.reshape(attention_states,shape=(-1,hidden_size)) #[batch_size*sentence_length,hidden_size]
             attention_states=tf.matmul(attention_states, U_a) #[batch_size*sentence_length,hidden_size]
-            #print("attention_states:", attention_states) #(?, 200)
-            print("batch_size",batch_size," ;sequence_length:",sequence_length," ;hidden_size:",hidden_size)
+            #print("batch_size",batch_size," ;sequence_length:",sequence_length," ;hidden_size:",hidden_size) #print("attention_states:", attention_states) #(?, 200)
             attention_states=tf.reshape(attention_states,shape=(-1,sequence_length,hidden_size)) # TODO [batch_size,sentence_length,hidden_size]
             #query_expanded:            [batch_size,1,             hidden_size]
             #attention_states_reshaped: [batch_size,sentence_length,hidden_size]
-            attention_logits=tf.nn.tanh(query+attention_states+U_aa) #[batch_size,sentence_length,hidden_size]
+            attention_logits=tf.nn.tanh(query+attention_states+U_aa) #[batch_size,sentence_length,hidden_size]. additive style
 
             # 2.get possibility of attention
             attention_logits=tf.reshape(attention_logits,shape=(-1,hidden_size)) #batch_size*sequence_length [batch_size*sentence_length,hidden_size]

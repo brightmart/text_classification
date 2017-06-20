@@ -150,7 +150,7 @@ def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,v
             ys_decoder_input=[_PAD_INDEX]*seq2seq_label_length
             # below is label.
             for j,y in enumerate(ys):
-                if i<seq2seq_label_length-1:
+                if j<seq2seq_label_length-1:
                     ys_mulithot_list[j]=vocabulary_word2index_label[y]
             if len(ys)>seq2seq_label_length-1:
                 ys_mulithot_list[seq2seq_label_length-1]=vocabulary_word2index_label[_END]#ADD END TOKEN
@@ -160,12 +160,12 @@ def load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,v
             # below is input for decoder.
             ys_decoder_input[0]=vocabulary_word2index_label[_GO]
             for j,y in enumerate(ys):
-                if i < seq2seq_label_length - 1:
+                if j < seq2seq_label_length - 1:
                     ys_decoder_input[j+1]=vocabulary_word2index_label[y]
-            if i<3:
-                print("ys:==========>0", ys)
-                print("ys_mulithot_list:==============>1", ys_mulithot_list)
-                print("ys_decoder_input:==============>2", ys_decoder_input)
+            if i<10:
+                print(i,"ys:==========>0", ys)
+                print(i,"ys_mulithot_list:==============>1", ys_mulithot_list)
+                print(i,"ys_decoder_input:==============>2", ys_decoder_input)
         else:
             if multi_label_flag: # 2)prepare multi-label format for classification
                 ys = y.replace('\n', '').split(" ")  # ys is a list

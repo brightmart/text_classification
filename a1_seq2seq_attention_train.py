@@ -9,7 +9,7 @@ import numpy as np
 from a1_seq2seq_attention_model import  seq2seq_attention_model
 from data_util_zhihu import load_data_multilabel_new,create_voabulary,create_voabulary_label
 from tflearn.data_utils import to_categorical, pad_sequences
-import os
+import os,math
 import word2vec
 import pickle
 
@@ -53,9 +53,12 @@ def main(_):
         vocabulary_word2index_label,vocabulary_index2word_label = create_voabulary_label(name_scope="seq2seq_attention",use_seq2seq=True)
         if FLAGS.multi_label_flag:
             FLAGS.traning_data_path='training-data/train-zhihu6-title-desc.txt' #train
-        train, test, _ = load_data_multilabel_new(vocabulary_word2index, vocabulary_word2index_label,multi_label_flag=FLAGS.multi_label_flag,use_seq2seq=True,traning_data_path=FLAGS.traning_data_path) #,traning_data_path=FLAGS.traning_data_path
+        train,test,_=load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,multi_label_flag=FLAGS.multi_label_flag,use_seq2seq=True,traning_data_path=FLAGS.traning_data_path)
         trainX, trainY,train_decoder_input = train
         testX, testY,test_decoder_input = test
+
+        print("trainY:",trainY[0:10])
+        print("train_decoder_input:",train_decoder_input[0:10])
         # 2.Data preprocessing.Sequence padding
         print("start padding & transform to one hot...")
         trainX = pad_sequences(trainX, maxlen=FLAGS.sequence_length, value=0.)  # padding to max length
@@ -105,11 +108,11 @@ def main(_):
                 curr_loss,curr_acc,_=sess.run([model.loss_val,model.accuracy,model.train_op],feed_dict) #curr_acc--->TextCNN.accuracy
                 loss,counter,acc=loss+curr_loss,counter+1,acc+curr_acc
                 if counter %50==0:
-                    print("seq2seq_with_attention==>Epoch %d\tBatch %d\tTrain Loss:%.3f\tTrain Accuracy:%.3f" %(epoch,counter,loss/float(counter),acc/float(counter))) #tTrain Accuracy:%.3f---》acc/float(counter)
+                    print("seq2seq_with_attention==>Epoch %d\tBatch %d\tTrain Loss:%.3f\tTrain Accuracy:%.3f" %(epoch,counter,math.exp(loss/float(counter)),acc/float(counter))) #tTrain Accuracy:%.3f---》acc/float(counter)
                 ##VALIDATION VALIDATION VALIDATION PART######################################################################################################
                 if FLAGS.batch_size!=0 and (start%(FLAGS.validate_step*FLAGS.batch_size)==0): #(epoch % FLAGS.validate_every) or  if epoch % FLAGS.validate_every == 0:
                     eval_loss, eval_acc = do_eval(sess, model, testX, testY, batch_size,vocabulary_index2word_label,eval_decoder_input=test_decoder_input)
-                    print("seq2seq_with_attention.validation.part. previous_eval_loss:", previous_eval_loss,";current_eval_loss:", eval_loss)
+                    print("seq2seq_with_attention.validation.part. previous_eval_loss:", math.exp(previous_eval_loss),";current_eval_loss:", math.exp(eval_loss))
                     if eval_loss > previous_eval_loss: #if loss is not decreasing
                         # reduce the learning rate by a factor of 0.5
                         print("seq2seq_with_attention==>validation.part.going to reduce the learning rate.")
@@ -120,7 +123,7 @@ def main(_):
                     #print("HierAtten==>Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch, eval_loss, eval_acc))
                     else:# loss is decreasing
                         if eval_loss<best_eval_loss:
-                            print("seq2seq_with_attention==>going to save the model.eval_loss:",eval_loss,";best_eval_loss:",best_eval_loss)
+                            print("seq2seq_with_attention==>going to save the model.eval_loss:",math.exp(eval_loss),";best_eval_loss:",math.exp(best_eval_loss))
                             # save model to checkpoint
                             save_path = FLAGS.ckpt_dir + "model.ckpt"
                             saver.save(sess, save_path, global_step=epoch)
@@ -169,20 +172,24 @@ def assign_pretrained_word_embedding(sess,vocabulary_index2word,vocab_size,model
     print("using pre-trained word emebedding.ended...")
 
 # 在验证集上做验证，报告损失、精确度
-def do_eval(sess,textCNN,evalX,evalY,batch_size,vocabulary_index2word_label,eval_decoder_input=None):
+def do_eval(sess,model,evalX,evalY,batch_size,vocabulary_index2word_label,eval_decoder_input=None):
+    ii=0
     number_examples=len(evalX)
     eval_loss,eval_acc,eval_counter=0.0,0.0,0
     for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
-        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.dropout_keep_prob: 1}
+        feed_dict = {model.input_x: evalX[start:end], model.dropout_keep_prob: 1}
         if not FLAGS.multi_label_flag:
-            feed_dict[textCNN.input_y] = evalY[start:end]
+            feed_dict[model.input_y] = evalY[start:end]
         else:
-            feed_dict[textCNN.input_y_label] = evalY[start:end]
-            feed_dict[textCNN.decoder_input] = eval_decoder_input[start:end]
-        curr_eval_loss, logits,curr_eval_acc= sess.run([textCNN.loss_val,textCNN.logits,textCNN.accuracy],feed_dict)#curr_eval_acc--->textCNN.accuracy
-        #label_list_top5 = get_label_using_logits(logits_[0], vocabulary_index2word_label)
-        #curr_eval_acc=calculate_accuracy(list(label_list_top5), evalY[start:end][0],eval_counter)
+            feed_dict[model.input_y_label] = evalY[start:end]
+            feed_dict[model.decoder_input] = eval_decoder_input[start:end]
+        curr_eval_loss, logits,curr_eval_acc,pred= sess.run([model.loss_val,model.logits,model.accuracy,model.predictions],feed_dict)#curr_eval_acc--->textCNN.accuracy
         eval_loss,eval_acc,eval_counter=eval_loss+curr_eval_loss,eval_acc+curr_eval_acc,eval_counter+1
+        if ii<20:
+            print("1.evalX[start:end]:",evalX[start:end])
+            print("2.evalY[start:end]:", evalY[start:end])
+            print("3.pred:",pred)
+            ii=ii+1
     return eval_loss/float(eval_counter),eval_acc/float(eval_counter)
 
 #从logits中取出前五 get label using logits
