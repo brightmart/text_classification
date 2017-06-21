@@ -34,6 +34,11 @@ Each model has a test method under the model class. you can run the test method 
 
 -------------------------------------------------------------------------
 
+Environment:
+python 2.7+ tensorflow 1.1
+(most of models should also work fine in other tensorflow version, since we use very few features bond to certain version.)
+-------------------------------------------------------------------------
+
 Notice:
 
 Some util function is in data_util.py; 
