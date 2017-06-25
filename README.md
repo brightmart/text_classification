@@ -11,7 +11,7 @@ Model including:
 
 1)fastText 2)TextCNN 3)TextRNN 4)BiLstmTextRelation 5)twoCNNTextRelation 6)BiLstmTextRelationTwoRNN 
 
-7)RCNN 8)Hierarchical Attention Network 9)seq2seq with attention
+7)RCNN 8)Hierarchical Attention Network 9)seq2seq with attention 10) Transformer("Attend Is All You Need")
 
 -------------------------------------------------------------------------
 
@@ -200,6 +200,39 @@ V.Notices:
 1) here i use two kinds of vocabularies. one is from words,used by encoder; another is for labels,used by decoder
 
 2) for vocabulary of lables, i insert three special token:"_GO","_END","_PAD"; "_UNK" is not used, since all labels is pre-defined.
+
+-------------------------------------------------------------------------
+
+10.Transformer("Attention Is All You Need")
+
+Status: WIP
+
+Just finish main part, and able to run the code for training task to learn output its reverse order of sequences; we are working for inference, layer normalization and residual connection.
+
+For every building blocks, we include a test function in the each file below, and we've test each small piece successfully.
+
+Sequence to sequence with attention is a typical model to solve sequence generation problem, such as translate, dialogue system. most of time, it use RNN as buidling block to do these tasks. util recently, people also apply convolutional Neural Network for sequence to sequence problem. Transformer, however, it perform these tasks solely on attention mechansim. it is fast and acheive new state-of-art result.
+
+It also has two main parts: encoder and decoder. below is desc from paper:
+
+Encoder:
+
+6 layers.each layers has two sub-layers.
+the first is multi-head self-attention mechanism;
+the second is position-wise fully connected feed-forward network.
+for each sublayer. use LayerNorm(x+Sublayer(x)). all dimension=512.
+
+Decoder:
+
+1. The decoder is composed of a stack of N= 6 identical layers.
+2. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head
+attention over the output of the encoder stack.
+3. Similar to the encoder, we employ residual connections
+around each of the sub-layers, followed by layer normalization. We also modify the self-attention
+sub-layer in the decoder stack to prevent positions from attending to subsequent positions.  This
+masking, combined with fact that the output embeddings are offset by one position, ensures that the
+predictions for position i can depend only on the known outputs at positions less than i.
+
 
 -------------------------------------------------------------------------
 
