@@ -265,6 +265,8 @@ Reference:
 
 6.Neural Machine Translation by Jointly Learning to Align and Translate
 
+7. Attention Is All You Need
+
 -------------------------------------------------------------------------
 
 to be continued. for any problem, concat brightmart@hotmail.com
