@@ -233,7 +233,7 @@ sub-layer in the decoder stack to prevent positions from attending to subsequent
 masking, combined with fact that the output embeddings are offset by one position, ensures that the
 predictions for position i can depend only on the known outputs at positions less than i.
 
-
+for detail of the model, please check: a2_transformer.py
 -------------------------------------------------------------------------
 
 TODO 
