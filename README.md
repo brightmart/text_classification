@@ -1,4 +1,5 @@
 Text Classification
+-------------------------------------------------------------------------
 the purpose of this repository is explore text classification methods in NLP with deep learning. 
 
 it has all kinds of baseline models for text classificaiton.
@@ -234,6 +235,7 @@ masking, combined with fact that the output embeddings are offset by one positio
 predictions for position i can depend only on the known outputs at positions less than i.
 
 for detail of the model, please check: a2_transformer.py
+
 -------------------------------------------------------------------------
 
 TODO 
