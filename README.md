@@ -8,15 +8,16 @@ it also support for multi-label classification where multi label associate with 
 
 although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
 
-Model including:
+Models:
+-------------------------------------------------------------------------
 
 1)fastText 2)TextCNN 3)TextRNN 4)BiLstmTextRelation 5)twoCNNTextRelation 6)BiLstmTextRelationTwoRNN 
 
 7)RCNN 8)Hierarchical Attention Network 9)seq2seq with attention 10) Transformer("Attend Is All You Need")
 
+Performance
 -------------------------------------------------------------------------
 
-Performance
 (mulit-label label prediction task,ask to prediction top5, 3 million training data,full mark:0.5)
 
 Model    | fastText  | TextCNN | TextRNN | RCNN  | Hierarchical Attention Network | Seq2seq with attention
@@ -26,7 +27,7 @@ Training | 10 minutes| 2 hours | 10 hours|2 hours| 2 hours                      
 -------------------------------------------------------------------------------------------------------
 
 Useage:
-
+-------------------------------------------------------------------------------------------------------
 1) model is in xxx_model.py
 2) run python xxx_train.py to train the model
 3) run python xxx_predict.py to do inference(test).
@@ -36,7 +37,7 @@ Each model has a test method under the model class. you can run the test method 
 -------------------------------------------------------------------------
 
 Environment:
-
+-------------------------------------------------------------------------------------------------------
 python 2.7+ tensorflow 1.1
 
 (most of models should also work fine in other tensorflow version, since we use very few features bond to certain version.)
@@ -44,13 +45,12 @@ python 2.7+ tensorflow 1.1
 -------------------------------------------------------------------------
 
 Notice:
-
+-------------------------------------------------------------------------------------------------------
 Some util function is in data_util.py; 
 typical input like: "x1 x2 x3 x4 x5 __label__ 323434" where 'x1,x2' is words, '323434' is label;
 it has a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
 
-Models:
-
+Models Detail:
 -------------------------------------------------------------------------
 
 1.fastText:  implmentation of <a href="https://arxiv.org/abs/1607.01759">Bag of Tricks for Efficient Text Classification</a>
@@ -239,7 +239,7 @@ for detail of the model, please check: a2_transformer.py
 -------------------------------------------------------------------------
 
 TODO 
-
+-------------------------------------------------------------------------------------------------------
 1.Character-level Convolutional Networks for Text Classification
 
 2.Convolutional Neural Networks for Text Categorization:Shallow Word-level vs. Deep Character-level
@@ -254,7 +254,7 @@ TODO
 -------------------------------------------------------------------------
 
 Reference:
-
+-------------------------------------------------------------------------------------------------------
 1.Bag of Tricks for Efficient Text Classification
 
 2.Convolutional Neural Networks for Sentence Classification
@@ -272,3 +272,4 @@ Reference:
 -------------------------------------------------------------------------
 
 to be continued. for any problem, concat brightmart@hotmail.com
+-------------------------------------------------------------------------------------------------------
