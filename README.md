@@ -8,6 +8,10 @@ it also support for multi-label classification where multi label associate with 
 
 although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
 
+each model has a test function under model class.
+
+we also explore two seq2seq model(seq2seq with attention,transformer: attention is all you need) to do text classification. and these two models can also be used for sequences generating, and other tasks.
+
 Models:
 -------------------------------------------------------------------------
 
@@ -53,7 +57,9 @@ it has a function to load and assign pretrained word embedding to the model,wher
 Models Detail:
 -------------------------------------------------------------------------
 
-1.fastText:  implmentation of <a href="https://arxiv.org/abs/1607.01759">Bag of Tricks for Efficient Text Classification</a>
+1.fastText:  
+-------------
+implmentation of <a href="https://arxiv.org/abs/1607.01759">Bag of Tricks for Efficient Text Classification</a>
 1) use bi-gram and/or tri-gram
 2) use NCE loss to speed us softmax computation(not use hierarchy softmax as original paper)
 result: performance is as good as paper, speed also very fast.
@@ -62,7 +68,9 @@ check: p5_fastTextB_model.py
 
 -------------------------------------------------------------------------
 
-2.TextCNN: implementation of <a href="http://www.aclweb.org/anthology/D14-1181"> Convolutional Neural Networks for Sentence Classification </a>
+2.TextCNN:
+-------------
+implementation of <a href="http://www.aclweb.org/anthology/D14-1181"> Convolutional Neural Networks for Sentence Classification </a>
 
 Structure:embedding--->conv--->max pooling--->fully connected layer-------->softmax
 
@@ -75,6 +83,7 @@ in order to get very good result with TextCNN, you also need to read carefully a
 
 
 3.TextRNN
+-------------
 Structure:embedding--->bi-directional lstm--->concat output--->average----->softmax
 
 check: p8_TextRNN_model.py
@@ -84,6 +93,7 @@ check: p8_TextRNN_model.py
 
 
 4.BiLstmTextRelation
+-------------
 Structure same as TextRNN. but input is special designed. e.g.input:"how much is the computer? EOS price of laptop". where 'EOS' is a special
 token spilted question1 and question2.
 
@@ -94,6 +104,7 @@ check:p9_BiLstmTextRelation_model.py
 
 
 5.twoCNNTextRelation
+-------------
 Structure: first use two different convolutional to extract feature of two sentences. then concat two features. use linear
 transform layer to out projection to target label, then softmax.
 
@@ -104,6 +115,7 @@ check: p9_twoCNNTextRelation_model.py
 
 
 6.BiLstmTextRelationTwoRNN
+-------------
 Structure: one bi-directional lstm for one sentence(get output1), another bi-directional lstm for another sentence(get output2). then:
 softmax(output1*M*output2)
 
@@ -116,6 +128,7 @@ for more detail you can go to: <a herf="http://www.wildml.com/2016/07/deep-learn
 
 
 7.RCNN:
+-------------
 Recurrent convolutional neural network for text classification
 
 implementation of <a href="https://scholar.google.com.hk/scholar?q=Recurrent+Convolutional+Neural+Networks+for+Text+Classification&hl=zh-CN&as_sdt=0&as_vis=1&oi=scholart&sa=X&ved=0ahUKEwjpx82cvqTUAhWHspQKHUbDBDYQgQMIITAA"> Recurrent Convolutional Neural Network for Text Classification </a>
@@ -134,7 +147,7 @@ check: p71_TextRCNN_model.py
 -------------------------------------------------------------------------
 
 8.Hierarchical Attention Network:
-
+-------------
 Implementation of <a href="https://www.cs.cmu.edu/~diyiy/docs/naacl16.pdf">Hierarchical Attention Networks for Document Classification</a>
 
 Structure:
@@ -163,7 +176,7 @@ check:p1_HierarchicalAttention_model.py
 -------------------------------------------------------------------------
 
 9.Seq2seq with attention
-
+-------------
 Implementation seq2seq with attention derived from <a href="https://arxiv.org/pdf/1409.0473.pdf">NEURAL MACHINE TRANSLATION BY JOINTLY LEARNING TO ALIGN AND TRANSLATE</a>
 
 I.Structure:
@@ -205,10 +218,11 @@ V.Notices:
 -------------------------------------------------------------------------
 
 10.Transformer("Attention Is All You Need")
+-------------
+Status: 
 
-Status: WIP
-
-Just finish main part, and able to run the code for training task to learn output its reverse order of sequences; we are working for inference, layer normalization and residual connection.
+Just finish main part, and able to output reverse order of its sequences, and do it in parallell style.
+layer normalization,residual connection, and mask are also used in the model.
 
 For every building blocks, we include a test function in the each file below, and we've test each small piece successfully.
 
