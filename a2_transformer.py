@@ -6,7 +6,7 @@ import copy
 from a2_base_model import BaseClass
 from a2_encoder import Encoder
 from a2_decoder import Decoder
-from a2_attention_between_enc_dec import AttentionEncoderDecoder
+import os
 """
 Transformer: perform sequence to sequence solely on attention mechanism. do it fast and better.
 for more detail, check paper: "Attention Is All You Need"
@@ -30,10 +30,9 @@ sub-layer in the decoder stack to prevent positions from attending to subsequent
 masking, combined with fact that the output embeddings are offset by one position, ensures that the
 predictions for position i can depend only on the known outputs at positions less than i.
 """
-#TODO 1.DECODER MASK FOR KNOWN POSITION; 2.PREDICT USING PREVIOUS OUTPUT;3.LAYER NORMALIZATION
 class Transformer(BaseClass):
     def __init__(self, num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
-                 vocab_size, embed_size, is_training,d_model,d_k,d_v,h,num_layer,decoder_sent_length=6,
+                 vocab_size, embed_size,d_model,d_k,d_v,h,num_layer,is_training,decoder_sent_length=6,
                  initializer=tf.random_normal_initializer(stddev=0.1),clip_gradients=5.0,l2_lambda=0.0001):
         """init all hyperparameter here"""
         super(Transformer, self).__init__(d_model, d_k, d_v, sequence_length, h, batch_size, num_layer=num_layer) #init some fields by using parent class.
@@ -42,7 +41,6 @@ class Transformer(BaseClass):
         self.sequence_length = sequence_length
         self.vocab_size = vocab_size
         self.embed_size = d_model
-        self.is_training = is_training
         self.learning_rate = tf.Variable(learning_rate, trainable=False, name="learning_rate")
         self.learning_rate_decay_half_op = tf.assign(self.learning_rate, self.learning_rate * 0.5)
         self.initializer = initializer
@@ -50,6 +48,7 @@ class Transformer(BaseClass):
         self.clip_gradients=clip_gradients
         self.l2_lambda=l2_lambda
 
+        self.is_training=is_training #self.is_training=tf.placeholder(tf.bool,name="is_training") #tf.bool #is_training
         self.input_x = tf.placeholder(tf.int32, [self.batch_size, self.sequence_length], name="input_x")                 #x  batch_size
         self.decoder_input = tf.placeholder(tf.int32, [self.batch_size, self.decoder_sent_length],name="decoder_input")  #y, but shift None
         self.input_y_label = tf.placeholder(tf.int32, [self.batch_size, self.decoder_sent_length], name="input_y_label") #y, but shift None
@@ -65,7 +64,7 @@ class Transformer(BaseClass):
 
         self.predictions = tf.argmax(self.logits, axis=2, name="predictions")
         self.accuracy = tf.constant(0.5)  # fuke accuracy. (you can calcuate accuracy outside of graph using method calculate_accuracy(...) in train.py)
-        if not is_training:
+        if self.is_training is False:# if it is not training, then no need to calculate loss and back-propagation.
             return
         self.loss_val = self.loss_seq2seq()
         self.train_op = self.train()
@@ -83,25 +82,27 @@ class Transformer(BaseClass):
         input_x_embeded=tf.multiply(input_x_embeded,tf.sqrt(tf.cast(self.d_model,dtype=tf.float32)))
         input_mask=tf.get_variable("input_mask",[self.sequence_length,1],initializer=self.initializer)
         input_x_embeded=tf.add(input_x_embeded,input_mask) #[None,sequence_length,embed_size].position embedding.
-        input_x_embeded=tf.reshape(input_x_embeded,shape=(-1,self.embed_size)) #[batch_size*sequence_length,embed_size]
         # 1.2 position embedding for decoder input
         decoder_input_embedded = tf.nn.embedding_lookup(self.Embedding_label, self.decoder_input) #[None,decoder_sent_length,embed_size]
         decoder_input_embedded = tf.multiply(decoder_input_embedded, tf.sqrt(tf.cast(self.d_model,dtype=tf.float32)))
         decoder_input_mask=tf.get_variable("decoder_input_mask",[self.decoder_sent_length,1],initializer=self.initializer)
         decoder_input_embedded=tf.add(decoder_input_embedded,decoder_input_mask)
-        decoder_input_embedded = tf.reshape(decoder_input_embedded, shape=(-1, self.embed_size)) ##[batch_size*decoder_sent_length,embed_size]
 
         # 2. encoder
-        encoder_class=Encoder(self.d_model,self.d_k,self.d_v,self.sequence_length,self.h,self.batch_size,self.num_layer,input_x_embeded,input_x_embeded)
+        encoder_class=Encoder(self.d_model,self.d_k,self.d_v,self.sequence_length,self.h,self.batch_size,self.num_layer,input_x_embeded,input_x_embeded,dropout_keep_prob=self.dropout_keep_prob)
         Q_encoded,K_encoded = encoder_class.encoder_fn() #K_v_encoder
 
         # 3. decoder with attention ==>get last of output(hidden state)====>prepare to get logits
-        #check two parameters below: Q: should from decoder; K_s: should be the output of encoder
+        mask = self.get_mask(self.decoder_sent_length)
+                           #d_model, d_k, d_v, sequence_length, h, batch_size, Q, K_s, K_v_encoder, decoder_sent_length,
+                           #num_layer = 6, type = 'decoder', is_training = True, mask = None
         decoder = Decoder(self.d_model, self.d_k, self.d_v, self.sequence_length, self.h, self.batch_size,
-                          decoder_input_embedded, decoder_input_embedded, decoder_input_embedded, K_encoded,self.decoder_sent_length)
-        Q_decoded, K_decoded=decoder.decoder_fn() #[batch_size*decoder_sent_length,d_model]
+                          decoder_input_embedded, decoder_input_embedded, K_encoded,self.decoder_sent_length,
+                          num_layer=self.num_layer,is_training=self.is_training,mask=mask,dropout_keep_prob=self.dropout_keep_prob) #,extract_word_vector_fn=extract_word_vector_fn
+        Q_decoded, K_decoded=decoder.decoder_fn() #[batch_size,decoder_sent_length,d_model]
+        K_decoded=tf.reshape(K_decoded,shape=(-1,self.d_model))
         with tf.variable_scope("output"):
-            print("self.W_projection2:",self.W_projection)
+            print("self.W_projection2:",self.W_projection," ;K_decoded:",K_decoded)
             logits = tf.matmul(K_decoded, self.W_projection) + self.b_projection #logits shape:[batch_size*decoder_sent_length,self.num_classes]
             logits=tf.reshape(logits,shape=(self.batch_size,self.decoder_sent_length,self.num_classes)) #logits shape:[batch_size,decoder_sent_length,self.num_classes]
         return logits
@@ -132,17 +133,67 @@ class Transformer(BaseClass):
             self.W_projection = tf.get_variable("W_projection", shape=[self.d_model, self.num_classes],initializer=self.initializer)  # [embed_size,label_size]
             self.b_projection = tf.get_variable("b_projection", shape=[self.num_classes])
 
+    def get_mask(self,sequence_length):
+        lower_triangle = tf.matrix_band_part(tf.ones([sequence_length, sequence_length]), -1, 0)
+        result = -1e9 * (1.0 - lower_triangle)
+        print("get_mask==>result:", result)
+        return result
 # test started: learn to output reverse sequence of itself.
-def test1():
+def test_training():
+    # below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
+    num_classes = 9+2 #additional two classes:one is for _GO, another is for _END
+    learning_rate = 0.0001/10.0
+    batch_size = 1
+    decay_steps = 1000
+    decay_rate = 0.9
+    sequence_length = 6 #5 TODO
+    vocab_size = 300
+    is_training = True #True
+    dropout_keep_prob = 0.9  # 0.5 #num_sentences
+    decoder_sent_length=6
+    l2_lambda=0.0001#0.0001
+    d_model=512 #512
+    d_k=64
+    d_v=64
+    h=8
+    num_layer=1#6
+    embed_size = d_model
+
+    model = Transformer(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
+                                    vocab_size, embed_size,d_model,d_k,d_v,h,num_layer,is_training,
+                                    decoder_sent_length=decoder_sent_length,l2_lambda=l2_lambda)
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        ckpt_dir = 'checkpoint_transformer/sequence_reverse/'
+        if os.path.exists(ckpt_dir+"checkpoint"):
+            saver.restore(sess, tf.train.latest_checkpoint(ckpt_dir))
+        for i in range(150000):
+            label_list=get_unique_labels()
+            input_x = np.array([label_list+[9]],dtype=np.int32) #TODO [2,3,4,5,6]
+            label_list_original=copy.deepcopy(label_list)
+            label_list.reverse()
+            decoder_input=np.array([[0]+label_list],dtype=np.int32) #TODO [[0,2,3,4,5,6]]
+            input_y_label=np.array([label_list+[1]],dtype=np.int32) #TODO [[2,3,4,5,6,1]]
+
+            loss, acc, predict, W_projection_value, _ = sess.run([model.loss_val, model.accuracy, model.predictions, model.W_projection, model.train_op],
+                                                     feed_dict={model.input_x:input_x,model.decoder_input:decoder_input, model.input_y_label: input_y_label,
+                                                                model.dropout_keep_prob: dropout_keep_prob}) #model.dropout_keep_prob: dropout_keep_prob
+            print(i,"loss:", loss, "acc:", acc, "label_list_original as input x:",label_list_original,";input_y_label:", input_y_label, "prediction:", predict)
+            if i%1500==0:
+                save_path = ckpt_dir + "model.ckpt"
+                saver.save(sess, save_path, global_step=i)
+
+def test_predict2():
     # below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
     num_classes = 9+2 #additional two classes:one is for _GO, another is for _END
     learning_rate = 0.0001
     batch_size = 1
     decay_steps = 1000
     decay_rate = 0.9
-    sequence_length = 5
+    sequence_length = 6 #5
     vocab_size = 300
-    is_training = True
+    is_training = False #True
     dropout_keep_prob = 1  # 0.5 #num_sentences
     decoder_sent_length=6
     l2_lambda=0.0001
@@ -150,29 +201,148 @@ def test1():
     d_k=64
     d_v=64
     h=8
-    num_layer=6 #6
+    num_layer=1#6
     embed_size = d_model
     model = Transformer(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
-                                    vocab_size, embed_size, is_training,d_model,d_k,d_v,h,num_layer,
+                                    vocab_size, embed_size,d_model,d_k,d_v,h,num_layer,is_training,
                                     decoder_sent_length=decoder_sent_length,l2_lambda=l2_lambda)
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        ckpt_dir = 'checkpoint_transformer/sequence_reverse/'
+        saver.restore(sess, tf.train.latest_checkpoint(ckpt_dir))
+        print("=================restored.")
+        for i in range(15000):
+            label_list=get_unique_labels()
+            input_x = np.array([label_list+[9]],dtype=np.int32) #[2,3,4,5,6]
+            label_list_original=copy.deepcopy(label_list)
+            label_list.reverse()
+            decoder_input=np.array([[0]*decoder_sent_length],dtype=np.int32) #[0]+label_list]--->[[0,2,3,4,5,6]]
+            #input_y_label=np.array([label_list+[1]],dtype=np.int32) #[[2,3,4,5,6,1]]
+            predict, W_projection_value = sess.run([ model.predictions, model.W_projection], #model.loss_val,--->loss, model.train_op
+                                feed_dict={model.input_x:input_x,
+                                           model.decoder_input:decoder_input,
+                                           #model.input_y_label: input_y_label,
+                                           model.dropout_keep_prob: dropout_keep_prob,
+                                           })
+            print(i, "label_list_original as input x:",label_list_original, "prediction:", predict) #"acc:", acc, "loss:", loss ";input_y_label:", input_y_label
+
+def test_predict():
+    # below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
+    num_classes = 9+2 #additional two classes:one is for _GO, another is for _END
+    learning_rate = 0.0001
+    batch_size = 1
+    decay_steps = 1000
+    decay_rate = 0.9
+    sequence_length = 6 #5
+    vocab_size = 300
+    is_training = False #True
+    dropout_keep_prob = 1  # 0.5 #num_sentences
+    decoder_sent_length=6
+    l2_lambda=0.0001
+    d_model=512 #512
+    d_k=64
+    d_v=64
+    h=8
+    num_layer=1#6
+    embed_size = d_model
+    model = Transformer(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
+                                    vocab_size, embed_size,d_model,d_k,d_v,h,num_layer,is_training,
+                                    decoder_sent_length=decoder_sent_length,l2_lambda=l2_lambda)
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        ckpt_dir = 'checkpoint_transformer/sequence_reverse/'
+        saver.restore(sess, tf.train.latest_checkpoint(ckpt_dir))
+        print("=================restored.")
+        for i in range(15000):
+            label_list=get_unique_labels()
+            input_x = np.array([label_list+[9]],dtype=np.int32) #[2,3,4,5,6]
+            label_list_original=copy.deepcopy(label_list)
+            label_list.reverse()
+            decoder_input=np.array([[0]*decoder_sent_length],dtype=np.int32) #[0]+label_list]--->[[0,2,3,4,5,6]]
+
+            for j in range(decoder_sent_length):
+                predict = sess.run(model.predictions, #model.loss_val,--->loss, model.train_op
+                                    feed_dict={model.input_x:input_x,
+                                               model.decoder_input:decoder_input,
+                                               #model.input_y_label: input_y_label,
+                                               model.dropout_keep_prob: dropout_keep_prob,
+                                               })
+                print("decoder_input:",decoder_input,";predict:",predict)
+                decoder_input[0][j]=predict[0][j]
+
+            print(i, "label_list_original as input x:",label_list_original, "prediction:", predict) #"acc:", acc, "loss:", loss ";input_y_label:", input_y_label
+
+# test started: learn to output reverse sequence of itself using batch input.
+def test_training_batch():
+    # below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
+    num_classes = 9+2 #additional two classes:one is for _GO, another is for _END
+    learning_rate = 0.001
+    batch_size = 16
+    decay_steps = 1000
+    decay_rate = 0.9
+    sequence_length = 5
+    vocab_size = 300
+    is_training = True #True
+    dropout_keep_prob = 1  # 0.5 #num_sentences
+    decoder_sent_length=6
+    l2_lambda=0.0001
+    d_model=512 #512
+    d_k=64
+    d_v=64
+    h=8
+    num_layer=1#6
+    embed_size = d_model
+    ckpt_dir='checkpoint_transformer/sequence_reverse_batch/'
+    model = Transformer(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length+1,
+                                    vocab_size, embed_size,d_model,d_k,d_v,h,num_layer,is_training,
+                                    decoder_sent_length=decoder_sent_length,l2_lambda=l2_lambda)
+    saver = tf.train.Saver()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for i in range(1500):
-            label_list=get_unique_labels()
-            input_x = np.array([label_list],dtype=np.int32) #[2,3,4,5,6]
+            label_list=get_unique_labels_batch(batch_size,length=sequence_length)
+            input_x = np.array(label_list,dtype=np.int32) #INPUT_X of each element should be 6.
             label_list_original=copy.deepcopy(label_list)
-            label_list.reverse()
-            decoder_input=np.array([[0]+label_list],dtype=np.int32) #[[0,2,3,4,5,6]]
-            input_y_label=np.array([label_list+[1]],dtype=np.int32) #[[2,3,4,5,6,1]]
-            loss, acc, predict, W_projection_value, _ = sess.run([model.loss_val, model.accuracy, model.predictions, model.W_projection, model.train_op],
-                                feed_dict={model.input_x:input_x,model.decoder_input:decoder_input, model.input_y_label: input_y_label,model.dropout_keep_prob: dropout_keep_prob})
-            print(i,"loss:", loss, "acc:", acc, "label_list_original as input x:",label_list_original,";input_y_label:", input_y_label, "prediction:", predict)
 
-def get_unique_labels():
-    x=[2,3,4,5,6]
+            decoder_input_list=[]
+            input_y_label_list=[]
+            for _,sub_label_list in enumerate(label_list):
+                sub_label_list.reverse()
+                decoder_input_list.append([0]+sub_label_list)
+                input_y_label_list.append(sub_label_list+[1])
+
+            decoder_input=np.array(decoder_input_list,dtype=np.int32)
+            input_y_label=np.array(input_y_label_list,dtype=np.int32)
+
+            loss, acc, predict, W_projection_value, _ = sess.run([model.loss_val, model.accuracy, model.predictions, model.W_projection, model.train_op],
+                                                       feed_dict={model.input_x:input_x,model.decoder_input:decoder_input, model.input_y_label: input_y_label,
+                                                                  model.dropout_keep_prob: dropout_keep_prob})
+            print(i,"loss:", loss, "acc:", acc)
+            if i%100==0:
+                print("label_list_original as input x:",label_list_original,";input_y_label:", input_y_label, "prediction:", predict)
+            if i%(int(1500/batch_size))==0:
+                save_path = ckpt_dir + "model.ckpt"
+                saver.save(sess, save_path, global_step=i*batch_size)
+
+def get_unique_labels(length=5):
+    #if length is  None:
+    #    x=[2,3,4,5,6]
+    #else:
+    x=[i for i in range(2,2+length)]
     random.shuffle(x)
     return x
 
-test1()
+def get_unique_labels_batch(batch_size,length=None):
+    x=[]
+    for i in range(batch_size):
+        labels=get_unique_labels(length=length)
+        x.append(labels)
+    return x
 
-#test self-attention: check function at test.py
+
+#test_training()
+test_predict()
+#test_training_batch()
+#test_training()
