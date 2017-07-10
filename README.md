@@ -12,6 +12,10 @@ each model has a test function under model class.
 
 we also explore two seq2seq model(seq2seq with attention,transformer: attention is all you need) to do text classification. and these two models can also be used for sequences generating, and other tasks.
 
+if you want to know more detail about dataset of text classification or task these models can be used, one of chooise is below:
+https://biendata.com/competition/zhihu/
+
+
 Models:
 -------------------------------------------------------------------------
 
