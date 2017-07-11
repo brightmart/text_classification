@@ -6,8 +6,7 @@ import tensorflow.contrib as tf_contrib
 import numpy as np
 class EntityNetwork:
     def __init__(self, num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length, story_length,
-                 vocab_size, embed_size,
-                 hidden_size, is_training, multi_label_flag=False,block_size=20,
+                 vocab_size, embed_size,hidden_size, is_training, multi_label_flag=False,block_size=20,
                  initializer=tf.random_normal_initializer(stddev=0.1),clip_gradients=5.0):#0.01
         """init all hyperparameter here"""
         # set hyperparamter
@@ -169,19 +168,21 @@ class EntityNetwork:
             # output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
             # input_y:shape=(?, 1999); logits:shape=(?, 1999)
             # let `x = logits`, `z = labels`.  The logistic loss is:z * -log(sigmoid(x)) + (1 - z) * -log(1 - sigmoid(x))
-            #losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.input_y_multilabel,logits=self.logits);  #[None,self.num_classes]. losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input__y,logits=self.logits)
-            losses=self.smoothing_cross_entropy(self.logits,self.answer_multilabel,self.num_classes)
-            losses = tf.reduce_sum(losses, axis=1)  # shape=(?,). loss for all data in the batch
+            losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.answer_multilabel,logits=self.logits);  #[None,self.num_classes]. losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input__y,logits=self.logits)
+            #losses=self.smoothing_cross_entropy(self.logits,self.answer_multilabel,self.num_classes) #shape=(512,)
+            #print("#################losses:",losses)
+            #losses = tf.reduce_sum(losses, axis=1)  # shape=(?,). loss for all data in the batch
             loss = tf.reduce_mean(losses)  # shape=().   average loss in the batch
             l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * l2_lambda
             loss = loss + l2_losses
         return loss
 
-    def smoothing_cross_entropy(logits, labels, vocab_size, confidence=0.9): #confidence = 1.0 - label_smoothing. where label_smooth=0.1. from http://github.com/tensorflow/tensor2tensor
+    def smoothing_cross_entropy(self,logits, labels, vocab_size, confidence=0.9): #confidence = 1.0 - label_smoothing. where label_smooth=0.1. from http://github.com/tensorflow/tensor2tensor
         """Cross entropy with label smoothing to limit over-confidence."""
         with tf.name_scope("smoothing_cross_entropy", [logits, labels]):
             # Low confidence is given to all non-true labels, uniformly.
             low_confidence = (1.0 - confidence) / tf.to_float(vocab_size - 1)
+            print("low_confidence:",low_confidence,";confidence:",confidence,"vocab_size:",vocab_size)
             # Normalizing constant is the best cross-entropy value with soft targets.
             # We subtract it just for readability, makes no difference on learning.
             normalizing = -(confidence * tf.log(confidence) + tf.to_float(vocab_size - 1) * low_confidence * tf.log(low_confidence + 1e-20))
@@ -212,8 +213,8 @@ class EntityNetwork:
         """define all weights here"""
         with tf.variable_scope("output_module"):
             self.H=tf.get_variable("H",shape=[self.hidden_size,self.hidden_size],initializer=self.initializer)
-            self.R = tf.get_variable("R", shape=[self.hidden_size, self.vocab_size], initializer=self.initializer)
-            self.y_bias=tf.get_variable("y_bias",shape=[self.vocab_size])
+            self.R = tf.get_variable("R", shape=[self.hidden_size, self.num_classes], initializer=self.initializer)
+            self.y_bias=tf.get_variable("y_bias",shape=[self.num_classes])
             self.b_projected = tf.get_variable("b_projection", shape=[self.num_classes])
             self.h_u_bias=tf.get_variable("h_u_bias",shape=[self.hidden_size])
 
@@ -240,7 +241,7 @@ def test():
     # below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
     num_classes = 15
     learning_rate = 0.001
-    batch_size = 4
+    batch_size = 8
     decay_steps = 1000
     decay_rate = 0.9
     sequence_length = 10
@@ -268,4 +269,4 @@ def test():
                                            feed_dict={model.query: query, model.story:story,model.answer_single: answer_single,model.dropout_keep_prob: dropout_keep_prob})
             print(i,"query:", query,"=====================>")
             print(i,"loss:", loss, "acc:", acc, "label:", answer_single, "prediction:", predict)
-test()
+#test()
