@@ -266,7 +266,8 @@ for detail of the model, please check: a2_transformer.py
 
 -------------------------------------------------------------------------
 11. Recurrent Entity Network
--------------------------------------------------------------------------
+-------------
+Input:1. story: it is multi-sentences, as context. 2.query: a sentence, which is a question, 3. ansewr: a single label.
 
 Model Structure:
 
@@ -297,6 +298,7 @@ Main take away from this model:
 
 for detail of the model, please check: a3_entity_network.py
 
+under this model, it has a test function, which ask this model to count numbers both for story(context) and query(question). but weights of story is smaller than query.
 
 -------------------------------------------------------------------------
 
