@@ -258,9 +258,43 @@ sub-layer in the decoder stack to prevent positions from attending to subsequent
 masking, combined with fact that the output embeddings are offset by one position, ensures that the
 predictions for position i can depend only on the known outputs at positions less than i.
 
+Main Take away from this model:
+
+1) multi-head self attention: use self attention, linear transform multi-times to get projection of key-values, then do ordinary attention; 2) some tricks to improve performance(residual connection,position encoding, poistion feed forward, label smooth, mask to ignore things we want to ignore).
+
 for detail of the model, please check: a2_transformer.py
 
 -------------------------------------------------------------------------
+11. Recurrent Entity Network
+
+Model Structure:
+
+1) Input encoding: use bag of word to encode story(context) and query(question); take account of position by using position mask
+
+2) Dynamic memory: 
+
+a. compute gate by using 'similiarity' of keys,values with input of story. 
+
+b. get candidate hidden state by transform each key,value and input.
+
+c. combine gate and candidate hidden state to update current hidden state.
+
+3) Output moudle( use attention mechanism):
+a. to get possibility distribution by computing 'similarity' of query and hidden state
+
+b. get weighted sum of hidden state using possibility distribution.
+
+c. non-linearity transform of query and hidden state to get predict label.
+
+Main take away from this model:
+
+1) use blocks of keys and values, which is ind
+
+for detail of the model, please check: a3_entity_network.py
+
+
+-------------------------------------------------------------------------
+
 
 TODO 
 -------------------------------------------------------------------------------------------------------
@@ -273,8 +307,6 @@ TODO
 4.Adversarial Training Methods For Semi-supervised Text Classification
 
 -------------------------------------------------------------------------
-11. recurrent entity network
-for detail of the model, please check: a3_entity_network.py
 
 
 
