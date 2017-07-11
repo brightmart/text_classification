@@ -265,6 +265,7 @@ Main Take away from this model:
 for detail of the model, please check: a2_transformer.py
 
 -------------------------------------------------------------------------
+
 11. Recurrent Entity Network
 -------------
 Input:1. story: it is multi-sentences, as context. 2.query: a sentence, which is a question, 3. ansewr: a single label.
@@ -314,7 +315,6 @@ TODO
 4.Adversarial Training Methods For Semi-supervised Text Classification
 
 -------------------------------------------------------------------------
-
 
 
 Reference:
