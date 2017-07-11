@@ -266,6 +266,7 @@ for detail of the model, please check: a2_transformer.py
 
 -------------------------------------------------------------------------
 11. Recurrent Entity Network
+-------------------------------------------------------------------------
 
 Model Structure:
 
@@ -288,7 +289,11 @@ c. non-linearity transform of query and hidden state to get predict label.
 
 Main take away from this model:
 
-1) use blocks of keys and values, which is ind
+1) use blocks of keys and values, which is independent from each other. so it can be run in parallel.
+
+2) modelling context and question together. use memory to track state of world; and use non-linearity transform of hidden state and question(query) to make a prediction.
+
+3) simple model can also achieve very good performance. simple encode as use bag of word.
 
 for detail of the model, please check: a3_entity_network.py
 
