@@ -34,11 +34,11 @@ Performance
 
 (mulit-label label prediction task,ask to prediction top5, 3 million training data,full mark:0.5)
 
-Model    | fastText  | TextCNN | TextRNN | RCNN  | HierarchicalAttentionNetwork| Seq2seq with attention| EntityNetwork|
+Model    | fastText  | TextCNN | TextRNN | RCNN  | HierarchicalAttentionNetwork| Seq2seq with attention| EntityNetwork
 ---      | ---       | ---     | ---     |---    |---                          |---
-Score    | 0.362     |  0.405  |  0.358  | 0.395 | 0.398                       | 0.322                    0.33        |
-Training | 10 minutes| 2 hours | 10 hours|2 hours| 2 hours                     | 3 hours                  1 hour      |
----------------------------------------------------------------------------------------------------------------
+Score    | 0.362     |  0.405  |  0.358  | 0.395 | 0.398                       | 0.322                    0.33        
+Training | 10 minutes| 2 hours | 10 hours|2 hours| 2 hours                     | 3 hours                  1 hour      
+---------------------------------------------------------------------------------------------------------
 
 Useage:
 -------------------------------------------------------------------------------------------------------
