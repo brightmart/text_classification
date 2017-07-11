@@ -12,6 +12,8 @@ each model has a test function under model class.
 
 we also explore two seq2seq model(seq2seq with attention,transformer: attention is all you need) to do text classification. and these two models can also be used for sequences generating, and other tasks.
 
+we implement one memory network: recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer.
+
 if you want to know more detail about dataset of text classification or task these models can be used, one of choose is below:
 https://biendata.com/competition/zhihu/
 
@@ -19,9 +21,13 @@ https://biendata.com/competition/zhihu/
 Models:
 -------------------------------------------------------------------------
 
-1)fastText 2)TextCNN 3)TextRNN 4)BiLstmTextRelation 5)twoCNNTextRelation 6)BiLstmTextRelationTwoRNN 
-
-7)RCNN 8)Hierarchical Attention Network 9)seq2seq with attention 10) Transformer("Attend Is All You Need")
+1) fastText
+2) TextCNN   3) TextRNN   4) BiLstmTextRelation   5) twoCNNTextRelation   6) BiLstmTextRelationTwoRNN 
+7) RCNN     
+8) Hierarchical Attention Network    
+9) seq2seq with attention   
+10) Transformer("Attend Is All You Need")
+11) EntityNetwork:tracking state of the world
 
 Performance
 -------------------------------------------------------------------------
@@ -264,12 +270,13 @@ TODO
 
 3.Very Deep Convolutional Networks for Text Classification
 
-4.Memory network
-
-5.Adversarial Training Methods For Semi-supervised Text Classification
-
+4.Adversarial Training Methods For Semi-supervised Text Classification
 
 -------------------------------------------------------------------------
+11. recurrent entity network
+for detail of the model, please check: a3_entity_network.py
+
+
 
 Reference:
 -------------------------------------------------------------------------------------------------------
@@ -285,7 +292,9 @@ Reference:
 
 6.Neural Machine Translation by Jointly Learning to Align and Translate
 
-7. Attention Is All You Need
+7.Attention Is All You Need
+
+8.Tracking the state of world with recurrent entity networks
 
 
 -------------------------------------------------------------------------
