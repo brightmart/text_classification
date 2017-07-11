@@ -10,9 +10,9 @@ although many of these models are simple, and may not get you to top level of th
 
 each model has a test function under model class.
 
-we also explore two seq2seq model(seq2seq with attention,transformer: attention is all you need) to do text classification. and these two models can also be used for sequences generating, and other tasks.
+we also explore two seq2seq model(seq2seq with attention,transformer: attention is all you need) to do text classification. and these two models can also be used for sequences generating, and other tasks. if you task is a multi-label classification, you can cast the problem to sequences generating.
 
-we implement one memory network: recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer.
+we implement one memory network: recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task.
 
 if you want to know more detail about dataset of text classification or task these models can be used, one of choose is below:
 https://biendata.com/competition/zhihu/
@@ -36,8 +36,8 @@ Performance
 
 Model    | fastText  | TextCNN | TextRNN | RCNN  | HierAtteNetwork| Seq2seqWithAttention| EntityNetwork
 ---      | ---       | ---     | ---     |---    |---             |---                  |---
-Score    | 0.362     |  0.405  |  0.358  | 0.395 | 0.398          | 0.322               | 0.36       
-Training | 10 minutes| 2 hours | 10 hours|2 hours| 2 hours        | 3 hours             | 1 hour      
+Score    | 0.362     |  0.405  |  0.358  | 0.395 | 0.398          | 0.322               | 0.379      
+Training | 10 minutes| 2 hours | 10 hours|2 hours| 2 hours        | 3 hours             | 3 hour      
 ----------------------------------------------------------------------------------------------------------------
 notice: 'HierAtteNetwork' means Hierarchical Attention Networkk
 
