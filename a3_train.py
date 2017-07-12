@@ -16,17 +16,17 @@ import pickle
 #configuration
 FLAGS=tf.app.flags.FLAGS
 tf.app.flags.DEFINE_integer("num_classes",1999,"number of label") #3 ADDITIONAL TOKEN: _GO,_END,_PAD
-tf.app.flags.DEFINE_float("learning_rate",0.01,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 512, "Batch size for training/evaluating.") #批处理的大小 32-->128
-tf.app.flags.DEFINE_integer("decay_steps", 6000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
+tf.app.flags.DEFINE_float("learning_rate",0.015,"learning rate")
+tf.app.flags.DEFINE_integer("batch_size", 256, "Batch size for training/evaluating.") #批处理的大小 32-->128
+tf.app.flags.DEFINE_integer("decay_steps", 12000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
 tf.app.flags.DEFINE_float("decay_rate", 1.0, "Rate of decay for learning rate.") #0.87一次衰减多少
 tf.app.flags.DEFINE_string("ckpt_dir","checkpoint_entity_network/","checkpoint location for the model")
-tf.app.flags.DEFINE_integer("sequence_length",100,"max sentence length")
+tf.app.flags.DEFINE_integer("sequence_length",50,"max sentence length") #100
 tf.app.flags.DEFINE_integer("embed_size",100,"embedding size")
 tf.app.flags.DEFINE_boolean("is_training",True,"is traning.true:tranining,false:testing/inference")
 tf.app.flags.DEFINE_integer("num_epochs",10,"number of epochs to run.")
 tf.app.flags.DEFINE_integer("validate_every", 1, "Validate every validate_every epochs.") #每10轮做一次验证
-tf.app.flags.DEFINE_integer("validate_step", 1000, "how many step to validate.") #1500做一次检验
+tf.app.flags.DEFINE_integer("validate_step", 2000, "how many step to validate.") #1500做一次检验
 tf.app.flags.DEFINE_boolean("use_embedding",True,"whether to use embedding or not.")
 #tf.app.flags.DEFINE_string("cache_path","text_cnn_checkpoint/data_cache.pik","checkpoint location for the model")
 #train-zhihu4-only-title-all.txt
@@ -34,7 +34,7 @@ tf.app.flags.DEFINE_string("traning_data_path","train-zhihu4-only-title-all.txt"
 tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec-title-desc.bin-100","word2vec's vocabulary and vectors") #zhihu-word2vec.bin-100-->zhihu-word2vec-multilabel-minicount15.bin-100
 tf.app.flags.DEFINE_boolean("multi_label_flag",True,"use multi label or single label.") #set this false. becase we are using it is a sequence of token here.
 tf.app.flags.DEFINE_integer("hidden_size",100,"hidden size")
-tf.app.flags.DEFINE_float("l2_lambda", 0.0001, "l2 regularization")
+#tf.app.flags.DEFINE_float("l2_lambda", 0.0001, "l2 regularization")
 tf.app.flags.DEFINE_integer("story_length",1,"story length")
 tf.app.flags.DEFINE_integer("block_size",20,"block size")
 
@@ -53,7 +53,7 @@ def main(_):
         print("entity_network.vocab_size:",vocab_size)
         vocabulary_word2index_label,vocabulary_index2word_label = create_voabulary_label(name_scope="entity_networks")
         if FLAGS.multi_label_flag:
-            FLAGS.traning_data_path='training-data/test-zhihu6-title-desc.txt' #train
+            FLAGS.traning_data_path='training-data/train-zhihu6-title-desc.txt' #train
         train,test,_=load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,multi_label_flag=FLAGS.multi_label_flag,
                                               traning_data_path=FLAGS.traning_data_path)
         trainX, trainY = train
@@ -100,7 +100,7 @@ def main(_):
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
                 if epoch==0 and counter==0:
                     print("trainX[start:end]:",trainX[start:end])#;print("trainY[start:end]:",trainY[start:end])
-                feed_dict = {model.query: trainX[start:end],model.story: np.expand_dims(trainX[start:end],axis=1),model.dropout_keep_prob: 0.5}
+                feed_dict = {model.query: trainX[start:end],model.story: np.expand_dims(trainX[start:end],axis=1),model.dropout_keep_prob: 1.0}
                 if not FLAGS.multi_label_flag:
                     feed_dict[model.answer_single] = trainY[start:end]
                 else:
@@ -112,7 +112,7 @@ def main(_):
                           %(epoch,counter,math.exp(loss/float(counter)) if (loss/float(counter))<20 else 10000.000,acc/float(counter))) #tTrain Accuracy:%.3f---》acc/float(counter)
                 ##VALIDATION VALIDATION VALIDATION PART######################################################################################################
                 if FLAGS.batch_size!=0 and (start%(FLAGS.validate_step*FLAGS.batch_size)==0): #(epoch % FLAGS.validate_every) or  if epoch % FLAGS.validate_every == 0:
-                    eval_loss, eval_acc = do_eval(sess, model, testX, testY, batch_size,vocabulary_index2word_label,eval_decoder_input=test_decoder_input)
+                    eval_loss, eval_acc = do_eval(sess, model, testX, testY, batch_size,vocabulary_index2word_label)
                     print("entity_network.validation.part. previous_eval_loss:", math.exp(previous_eval_loss) if previous_eval_loss<20 else 10000.000,";current_eval_loss:", math.exp(eval_loss) if eval_loss<20 else 10000.000)
                     if eval_loss > previous_eval_loss: #if loss is not decreasing
                         # reduce the learning rate by a factor of 0.5

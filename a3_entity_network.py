@@ -117,9 +117,9 @@ class EntityNetwork:
         input_split=tf.split(self.story_embedding,self.story_length,axis=1) #a list.length is:story_length.each element is:[batch_size,1,embed_size]
         input_list=[tf.squeeze(x,axis=1) for x in input_split]           #a list.length is:story_length.each element is:[batch_size,embed_size]
         h_all=tf.get_variable("hidden_states",shape=[self.block_size,self.hidden_size],initializer=self.initializer)# [block_size,hidden_size]
-        w_all=tf.get_variable("keys",shape=[self.block_size,self.hidden_size],initializer=self.initializer)          # [block_size,hidden_size]
-        w_all_expand=tf.tile(tf.expand_dims(w_all,axis=0),[self.batch_size,1,1]) #[batch_size,block_size,hidden_size] #TODO
-        h_all_expand=tf.tile(tf.expand_dims(h_all,axis=0),[self.batch_size,1,1]) #[batch_size,block_size,hidden_size] #TODO
+        w_all=tf.get_variable("keys",          shape=[self.block_size,self.hidden_size],initializer=self.initializer)# [block_size,hidden_size]
+        w_all_expand=tf.tile(tf.expand_dims(w_all,axis=0),[self.batch_size,1,1]) #[batch_size,block_size,hidden_size]
+        h_all_expand=tf.tile(tf.expand_dims(h_all,axis=0),[self.batch_size,1,1]) #[batch_size,block_size,hidden_size]
         for i,input in enumerate(input_list):
             h_all_expand=self.cell(input,h_all_expand,w_all_expand,i) #w_all:[batch_size,block_size,hidden_size]; h_all:[batch_size,block_size,hidden_size]
         return h_all_expand #[batch_size,block_size,hidden_size]
@@ -145,7 +145,6 @@ class EntityNetwork:
         h_candidate=self.activation(h_candidate_part1+h_candidate_part2,scope="h_candidate"+str(i))   #shape:[batch_size,block_size,hidden_size]
 
         # 3.update hidden state
-        print("h_all:",h_all,";g:",g,";h_candidate:",h_candidate) #h_all:160, 1, 100); g:(160, 1, 100); h_candidate:(8,20,100)
         h_all=h_all+tf.multiply(g,h_candidate) #shape:[batch_size,block_size,hidden_size]
 
         # 4.normalized hidden state
@@ -170,10 +169,9 @@ class EntityNetwork:
             # let `x = logits`, `z = labels`.  The logistic loss is:z * -log(sigmoid(x)) + (1 - z) * -log(1 - sigmoid(x))
             losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.answer_multilabel,logits=self.logits);  #[None,self.num_classes]. losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input__y,logits=self.logits)
             #losses=self.smoothing_cross_entropy(self.logits,self.answer_multilabel,self.num_classes) #shape=(512,)
-            #print("#################losses:",losses)
-            #losses = tf.reduce_sum(losses, axis=1)  # shape=(?,). loss for all data in the batch
+            losses = tf.reduce_sum(losses, axis=1)  # shape=(?,). loss for all data in the batch
             loss = tf.reduce_mean(losses)  # shape=().   average loss in the batch
-            l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * l2_lambda
+            l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if('bias' not in v.name ) and ('alpha' not in v.name)]) * l2_lambda
             loss = loss + l2_losses
         return loss
 
@@ -182,7 +180,6 @@ class EntityNetwork:
         with tf.name_scope("smoothing_cross_entropy", [logits, labels]):
             # Low confidence is given to all non-true labels, uniformly.
             low_confidence = (1.0 - confidence) / tf.to_float(vocab_size - 1)
-            print("low_confidence:",low_confidence,";confidence:",confidence,"vocab_size:",vocab_size)
             # Normalizing constant is the best cross-entropy value with soft targets.
             # We subtract it just for readability, makes no difference on learning.
             normalizing = -(confidence * tf.log(confidence) + tf.to_float(vocab_size - 1) * low_confidence * tf.log(low_confidence + 1e-20))
@@ -249,24 +246,69 @@ def test():
     embed_size = 100
     hidden_size = 100
     is_training = True
-    story_length=3
+    story_length = 3
     dropout_keep_prob = 1
-    model = EntityNetwork(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length, story_length,
-                 vocab_size, embed_size,hidden_size, is_training, multi_label_flag=False,block_size=20)
-
+    model = EntityNetwork(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
+                          story_length, vocab_size, embed_size, hidden_size, is_training,
+                          multi_label_flag=False, block_size=20)
+    ckpt_dir = 'checkpoint_entity_network/dummy_test/'
+    saver = tf.train.Saver()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for i in range(1500):
             # input_x should be:[batch_size, num_sentences,self.sequence_length]
-            story=np.random.randn(batch_size,story_length,sequence_length)
-            story[story>0]=1
-            story[story<=0]=0
-            query = np.random.randn(batch_size, sequence_length) #[batch_size, sequence_length]
+            story = np.random.randn(batch_size, story_length, sequence_length)
+            story[story > 0] = 1
+            story[story <= 0] = 0
+            query = np.random.randn(batch_size, sequence_length)  # [batch_size, sequence_length]
             query[query > 0] = 1
             query[query <= 0] = 0
-            answer_single =np.sum(query,axis=1)+np.round(0.1*np.sum(np.sum(story,axis=1),axis=1)) #[batch_size].e.g. np.array([1, 0, 1, 1, 1, 2, 1, 1])
-            loss, acc, predict, _ = sess.run([model.loss_val, model.accuracy, model.predictions, model.train_op],
-                                           feed_dict={model.query: query, model.story:story,model.answer_single: answer_single,model.dropout_keep_prob: dropout_keep_prob})
-            print(i,"query:", query,"=====================>")
-            print(i,"loss:", loss, "acc:", acc, "label:", answer_single, "prediction:", predict)
+            answer_single = np.sum(query, axis=1) + np.round(0.1 * np.sum(np.sum(story, axis=1),
+                                                                          axis=1))  # [batch_size].e.g. np.array([1, 0, 1, 1, 1, 2, 1, 1])
+            loss, acc, predict, _ = sess.run(
+                [model.loss_val, model.accuracy, model.predictions, model.train_op],
+                feed_dict={model.query: query, model.story: story, model.answer_single: answer_single,
+                           model.dropout_keep_prob: dropout_keep_prob})
+            print(i, "query:", query, "=====================>")
+            print(i, "loss:", loss, "acc:", acc, "label:", answer_single, "prediction:", predict)
+            if i % 300 == 0:
+                save_path = ckpt_dir + "model.ckpt"
+                saver.save(sess, save_path, global_step=i * 300)
+
+def predict():
+    num_classes = 15
+    learning_rate = 0.001
+    batch_size = 8
+    decay_steps = 1000
+    decay_rate = 0.9
+    sequence_length = 10
+    vocab_size = 10000
+    embed_size = 100
+    hidden_size = 100
+    is_training = False
+    story_length = 3
+    dropout_keep_prob = 1
+    model = EntityNetwork(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
+                          story_length, vocab_size, embed_size, hidden_size, is_training,
+                          multi_label_flag=False, block_size=20)
+    ckpt_dir = 'checkpoint_entity_network/dummy_test/'
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        saver.restore(sess, tf.train.latest_checkpoint(ckpt_dir))
+        for i in range(1500):
+            story = np.random.randn(batch_size, story_length, sequence_length)
+            story[story > 0] = 1
+            story[story <= 0] = 0
+            query = np.random.randn(batch_size, sequence_length)  # [batch_size, sequence_length]
+            query[query > 0] = 1
+            query[query <= 0] = 0
+            answer_single = np.sum(query, axis=1) + np.round(0.1 * np.sum(np.sum(story, axis=1),
+                                                                          axis=1))  # [batch_size].e.g. np.array([1, 0, 1, 1, 1, 2, 1, 1])
+            predict = sess.run([model.predictions], feed_dict={model.query: query, model.story: story,
+                                                               model.dropout_keep_prob: dropout_keep_prob})
+            print(i, "query:", query, "=====================>")
+            print(i, "label:", answer_single, "prediction:", predict)
+
 #test()
+#predict()
