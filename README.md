@@ -22,12 +22,16 @@ Models:
 -------------------------------------------------------------------------
 
 1) fastText
-2) TextCNN   3) TextRNN   4) BiLstmTextRelation   5) twoCNNTextRelation   6) BiLstmTextRelationTwoRNN 
-7) RCNN     
-8) Hierarchical Attention Network    
-9) seq2seq with attention   
-10) Transformer("Attend Is All You Need")
-11) EntityNetwork:tracking state of the world
+2) TextCNN   
+3) TextRNN    
+4) RCNN     
+5) Hierarchical Attention Network    
+6) seq2seq with attention   
+7) Transformer("Attend Is All You Need")
+8) EntityNetwork:tracking state of the world
+
+and other models:
+BiLstmTextRelation; twoCNNTextRelation; BiLstmTextRelationTwoRNN
 
 Performance
 -------------------------------------------------------------------------
