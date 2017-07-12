@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
-# HierarchicalAttention: 1.Word Encoder. 2.Word Attention. 3.Sentence Encoder 4.Sentence Attention 5.linear classifier. 2017-06-13
+# EntityNet:1.input encoder  2. dynamic emeory 3.output layer
 import tensorflow as tf
 import numpy as np
 import tensorflow.contrib as tf_contrib
 import numpy as np
+from tensorflow.contrib import rnn
+#from  a07_Transformer.a2_multi_head_attention import MultiHeadAttention
+
 class EntityNetwork:
     def __init__(self, num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length, story_length,
                  vocab_size, embed_size,hidden_size, is_training, multi_label_flag=False,block_size=20,
-                 initializer=tf.random_normal_initializer(stddev=0.1),clip_gradients=5.0):#0.01
+                 initializer=tf.random_normal_initializer(stddev=0.1),clip_gradients=5.0,use_bi_lstm=False,use_additive_attention=False):#0.01
         """init all hyperparameter here"""
         # set hyperparamter
         self.num_classes = num_classes
@@ -24,6 +27,9 @@ class EntityNetwork:
         self.clip_gradients=clip_gradients
         self.story_length=story_length
         self.block_size=block_size
+        self.use_bi_lstm=use_bi_lstm
+        self.dimension=self.hidden_size*2 if self.use_bi_lstm else self.hidden_size #if use bi-lstm, set dimension value, so it can be used later for parameter.
+        self.use_additive_attention=use_additive_attention
 
         # add placeholder (X,label)
         # self.input_x = tf.placeholder(tf.int32, [None, self.num_sentences,self.sequence_length], name="input_x")  # X
@@ -62,6 +68,19 @@ class EntityNetwork:
     def inference(self):
         """main computation graph here: 1.input encoder 2.dynamic emeory 3.output layer """
         # 1.input encoder
+        self.embedding_with_mask()
+        if self.use_bi_lstm:
+            self.input_encoder_bi_lstm()
+        else:
+            self.input_encoder_bow()
+        # 2. dynamic emeory
+        self.hidden_state=self.rnn_story() #[batch_size,block_size,hidden_size]. get hidden state after process the story
+
+        # 3.output layer
+        logits=self.output_module() #[batch_size,vocab_size]
+        return logits
+
+    def embedding_with_mask(self):
         # 1.1 embedding for story and query
         story_embedding = tf.nn.embedding_lookup(self.Embedding,self.story)  # [batch_size,story_length,sequence_length,embed_size]
         query_embedding=tf.nn.embedding_lookup(self.Embedding,self.query)    # [batch_size,sequence_length,embed_size]
@@ -71,16 +90,40 @@ class EntityNetwork:
         # 1.3 multiply of embedding and mask for story and query
         self.story_embedding=tf.multiply(story_embedding,story_mask)  # [batch_size,story_length,sequence_length,embed_size]
         self.query_embedding=tf.multiply(query_embedding,query_mask)  # [batch_size,sequence_length,embed_size]
+
+    def input_encoder_bow(self):
         # 1.4 use bag of words to encoder story and query
         self.story_embedding=tf.reduce_sum(self.story_embedding,axis=2) #[batch_size,story_length,embed_size]
         self.query_embedding=tf.reduce_sum(self.query_embedding,axis=1)  #[batch_size,embed_size]
 
-        # 2. dynamic emeory
-        self.hidden_state=self.rnn_story() #[batch_size,block_size,hidden_size]. get hidden state after process the story
+    def input_encoder_bi_lstm(self):
+        """use bi-directional lstm to encode query_embedding:[batch_size,sequence_length,embed_size]
+                                         and story_embedding:[batch_size,story_length,sequence_length,embed_size]
+        output:query_embedding:[batch_size,hidden_size*2]  story_embedding:[batch_size,self.story_length,self.hidden_size*2]
+        """
+        #1. encode query: bi-lstm layer
+        lstm_fw_cell = rnn.BasicLSTMCell(self.hidden_size)  # forward direction cell
+        lstm_bw_cell = rnn.BasicLSTMCell(self.hidden_size)  # backward direction cell
+        if self.dropout_keep_prob is not None:
+            lstm_fw_cell = rnn.DropoutWrapper(lstm_fw_cell, output_keep_prob=self.dropout_keep_prob)
+            lstm_bw_cell == rnn.DropoutWrapper(lstm_bw_cell, output_keep_prob=self.dropout_keep_prob)
+        query_hidden_output, _ = tf.nn.bidirectional_dynamic_rnn(lstm_fw_cell, lstm_bw_cell, self.query_embedding,dtype=tf.float32,scope="query_rnn")  # [batch_size,sequence_length,hidden_size] #creates a dynamic bidirectional recurrent neural network
+        query_hidden_output = tf.concat(query_hidden_output, axis=2) #[batch_size,sequence_length,hidden_size*2]
+        self.query_embedding=tf.reduce_sum(query_hidden_output,axis=1) #[batch_size,hidden_size*2]
+        print("input_encoder_bi_lstm.self.query_embedding:",self.query_embedding)
 
-        # 3.output layer
-        logits=self.output_module() #[batch_size,vocab_size]
-        return logits
+        #2. encode story
+        # self.story_embedding:[batch_size,story_length,sequence_length,embed_size]
+        self.story_embedding=tf.reshape(self.story_embedding,shape=(-1,self.story_length*self.sequence_length,self.embed_size)) #[self.story_length*self.sequence_length,self.embed_size]
+        lstm_fw_cell_story = rnn.BasicLSTMCell(self.hidden_size)  # forward direction cell
+        lstm_bw_cell_story = rnn.BasicLSTMCell(self.hidden_size)  # backward direction cell
+        if self.dropout_keep_prob is not None:
+            lstm_fw_cell_story = rnn.DropoutWrapper(lstm_fw_cell_story, output_keep_prob=self.dropout_keep_prob)
+            lstm_bw_cell_story == rnn.DropoutWrapper(lstm_bw_cell_story, output_keep_prob=self.dropout_keep_prob)
+        story_hidden_output, _ = tf.nn.bidirectional_dynamic_rnn(lstm_fw_cell_story, lstm_bw_cell_story, self.story_embedding,dtype=tf.float32,scope="story_rnn")
+        story_hidden_output=tf.concat(story_hidden_output,axis=2) #[batch_size,story_length*sequence_length,hidden_size*2]
+        story_hidden_output=tf.reshape(story_hidden_output,shape=(-1,self.story_length,self.sequence_length,self.hidden_size*2))
+        self.story_embedding = tf.reduce_sum(story_hidden_output, axis=2)  # [batch_size,self.story_length,self.hidden_size*2]
 
     def activation(self,features, scope=None):  # scope=None
         with tf.variable_scope(scope, 'PReLU', initializer=self.initializer):
@@ -105,7 +148,7 @@ class EntityNetwork:
         H_u_matmul=tf.matmul(u,self.H)+self.h_u_bias #shape:[batch_size,hidden_size]<----([batch_size,hidden_size],[hidden_size,hidden_size])
         activation=self.activation(self.query_embedding + H_u_matmul,scope="query_add_hidden")           #shape:[batch_size,hidden_size]
         activation = tf.nn.dropout(activation,keep_prob=self.dropout_keep_prob) #shape:[batch_size,hidden_size]
-        y=tf.matmul(activation,self.R+self.y_bias) #shape:[batch_size,vocab_size]<-----([batch_size,hidden_size],[hidden_size,vocab_size])
+        y=tf.matmul(activation,self.R)+self.y_bias #shape:[batch_size,vocab_size]<-----([batch_size,hidden_size],[hidden_size,vocab_size])
         return y #shape:[batch_size,vocab_size]
 
     def rnn_story(self):
@@ -114,12 +157,16 @@ class EntityNetwork:
         input is:  story:                 [batch_size,story_length,embed_size]
         :return:   last hidden state.     [batch_size,embed_size]
         """
+        # 1.split input to get lists.
         input_split=tf.split(self.story_embedding,self.story_length,axis=1) #a list.length is:story_length.each element is:[batch_size,1,embed_size]
         input_list=[tf.squeeze(x,axis=1) for x in input_split]           #a list.length is:story_length.each element is:[batch_size,embed_size]
-        h_all=tf.get_variable("hidden_states",shape=[self.block_size,self.hidden_size],initializer=self.initializer)# [block_size,hidden_size]
-        w_all=tf.get_variable("keys",          shape=[self.block_size,self.hidden_size],initializer=self.initializer)# [block_size,hidden_size]
+        # 2.init keys(w_all) and values(h_all) of memory
+        h_all=tf.get_variable("hidden_states",shape=[self.block_size,self.dimension],initializer=self.initializer)# [block_size,hidden_size]
+        w_all=tf.get_variable("keys",          shape=[self.block_size,self.dimension],initializer=self.initializer)# [block_size,hidden_size]
+        # 3.expand keys and values to prepare operation of rnn
         w_all_expand=tf.tile(tf.expand_dims(w_all,axis=0),[self.batch_size,1,1]) #[batch_size,block_size,hidden_size]
         h_all_expand=tf.tile(tf.expand_dims(h_all,axis=0),[self.batch_size,1,1]) #[batch_size,block_size,hidden_size]
+        # 4. run rnn using input with cell.
         for i,input in enumerate(input_list):
             h_all_expand=self.cell(input,h_all_expand,w_all_expand,i) #w_all:[batch_size,block_size,hidden_size]; h_all:[batch_size,block_size,hidden_size]
         return h_all_expand #[batch_size,block_size,hidden_size]
@@ -132,15 +179,15 @@ class EntityNetwork:
         :param h_all: [batch_size,block_size,hidden_size]
         :return: new hidden state: [batch_size,block_size,hidden_size]
         """
-        print("==========================================>h_all:",h_all)
         # 1.gate
         s_t_expand=tf.expand_dims(s_t, axis=1)       #[batch_size,1,hidden_size]
         g=tf.nn.sigmoid(tf.multiply(s_t_expand,h_all)+tf.multiply(s_t_expand,w_all))#shape:[batch_size,block_size,hidden_size]
 
         # 2.candidate hidden state
         #below' shape:[batch_size*block_size,hidden_size]
-        h_candidate_part1=tf.matmul(tf.reshape(h_all,shape=(-1,self.hidden_size)), self.U) + tf.matmul(tf.reshape(w_all,shape=(-1,self.hidden_size)), self.V)+self.h_bias
-        h_candidate_part1=tf.reshape(h_candidate_part1,shape=(self.batch_size,self.block_size,self.hidden_size)) #[batch_size,block_size,hidden_size]
+        h_candidate_part1=tf.matmul(tf.reshape(h_all,shape=(-1,self.dimension)), self.U) + tf.matmul(tf.reshape(w_all,shape=(-1,self.dimension)), self.V)+self.h_bias
+        print("======>h_candidate_part1:",h_candidate_part1) #(160, 100)
+        h_candidate_part1=tf.reshape(h_candidate_part1,shape=(self.batch_size,self.block_size,self.dimension)) #[batch_size,block_size,hidden_size]
         h_candidate_part2=tf.expand_dims(tf.matmul(s_t,self.W)+self.h2_bias,axis=1)              #shape:[batch_size,1,hidden_size]
         h_candidate=self.activation(h_candidate_part1+h_candidate_part2,scope="h_candidate"+str(i))   #shape:[batch_size,block_size,hidden_size]
 
@@ -164,7 +211,6 @@ class EntityNetwork:
 
     def loss_multilabel(self, l2_lambda=0.0001): #this loss function is for multi-label classification
         with tf.name_scope("loss"):
-            # output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
             # input_y:shape=(?, 1999); logits:shape=(?, 1999)
             # let `x = logits`, `z = labels`.  The logistic loss is:z * -log(sigmoid(x)) + (1 - z) * -log(1 - sigmoid(x))
             losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.answer_multilabel,logits=self.logits);  #[None,self.num_classes]. losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input__y,logits=self.logits)
@@ -209,18 +255,18 @@ class EntityNetwork:
     def instantiate_weights(self):
         """define all weights here"""
         with tf.variable_scope("output_module"):
-            self.H=tf.get_variable("H",shape=[self.hidden_size,self.hidden_size],initializer=self.initializer)
-            self.R = tf.get_variable("R", shape=[self.hidden_size, self.num_classes], initializer=self.initializer)
+            self.H=tf.get_variable("H",shape=[self.dimension,self.dimension],initializer=self.initializer)
+            self.R = tf.get_variable("R", shape=[self.dimension, self.num_classes], initializer=self.initializer)
             self.y_bias=tf.get_variable("y_bias",shape=[self.num_classes])
             self.b_projected = tf.get_variable("b_projection", shape=[self.num_classes])
-            self.h_u_bias=tf.get_variable("h_u_bias",shape=[self.hidden_size])
+            self.h_u_bias=tf.get_variable("h_u_bias",shape=[self.dimension])
 
         with tf.variable_scope("dynamic_memory"):
-            self.U=tf.get_variable("U",shape=[self.hidden_size,self.hidden_size],initializer=self.initializer)
-            self.V=tf.get_variable("V",shape=[self.hidden_size,self.hidden_size],initializer=self.initializer)
-            self.W=tf.get_variable("W",shape=[self.hidden_size,self.hidden_size],initializer=self.initializer)
-            self.h_bias=tf.get_variable("h_bias",shape=[self.hidden_size])
-            self.h2_bias = tf.get_variable("h2_bias", shape=[self.hidden_size])
+            self.U=tf.get_variable("U",shape=[self.dimension,self.dimension],initializer=self.initializer)
+            self.V=tf.get_variable("V",shape=[self.dimension,self.dimension],initializer=self.initializer)
+            self.W=tf.get_variable("W",shape=[self.dimension,self.dimension],initializer=self.initializer)
+            self.h_bias=tf.get_variable("h_bias",shape=[self.dimension])
+            self.h2_bias = tf.get_variable("h2_bias", shape=[self.dimension])
 
         with tf.variable_scope("embedding_projection"):  # embedding matrix
             self.Embedding = tf.get_variable("Embedding", shape=[self.vocab_size, self.embed_size],initializer=self.initializer)
@@ -248,9 +294,10 @@ def test():
     is_training = True
     story_length = 3
     dropout_keep_prob = 1
+    use_bi_lstm=False
     model = EntityNetwork(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
                           story_length, vocab_size, embed_size, hidden_size, is_training,
-                          multi_label_flag=False, block_size=20)
+                          multi_label_flag=False, block_size=20,use_bi_lstm=use_bi_lstm)
     ckpt_dir = 'checkpoint_entity_network/dummy_test/'
     saver = tf.train.Saver()
     with tf.Session() as sess:

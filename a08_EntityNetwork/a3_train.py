@@ -6,7 +6,8 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 import tensorflow as tf
 import numpy as np
-from a08_EntityNetwork import EntityNetwork
+from a3_entity_network import EntityNetwork
+#from aa1_data_util.\
 from data_util_zhihu import load_data_multilabel_new,create_voabulary,create_voabulary_label
 from tflearn.data_utils import to_categorical, pad_sequences
 import os,math
@@ -20,7 +21,7 @@ tf.app.flags.DEFINE_float("learning_rate",0.015,"learning rate")
 tf.app.flags.DEFINE_integer("batch_size", 256, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_integer("decay_steps", 12000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
 tf.app.flags.DEFINE_float("decay_rate", 1.0, "Rate of decay for learning rate.") #0.87一次衰减多少
-tf.app.flags.DEFINE_string("ckpt_dir","checkpoint_entity_network/","checkpoint location for the model")
+tf.app.flags.DEFINE_string("ckpt_dir","../checkpoint_entity_network2/","checkpoint location for the model")
 tf.app.flags.DEFINE_integer("sequence_length",50,"max sentence length") #100
 tf.app.flags.DEFINE_integer("embed_size",100,"embedding size")
 tf.app.flags.DEFINE_boolean("is_training",True,"is traning.true:tranining,false:testing/inference")
@@ -30,13 +31,14 @@ tf.app.flags.DEFINE_integer("validate_step", 2000, "how many step to validate.")
 tf.app.flags.DEFINE_boolean("use_embedding",True,"whether to use embedding or not.")
 #tf.app.flags.DEFINE_string("cache_path","text_cnn_checkpoint/data_cache.pik","checkpoint location for the model")
 #train-zhihu4-only-title-all.txt
-tf.app.flags.DEFINE_string("traning_data_path","train-zhihu4-only-title-all.txt","path of traning data.") #O.K.train-zhihu4-only-title-all.txt-->training-data/test-zhihu4-only-title.txt--->'training-data/train-zhihu5-only-title-multilabel.txt'
-tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec-title-desc.bin-100","word2vec's vocabulary and vectors") #zhihu-word2vec.bin-100-->zhihu-word2vec-multilabel-minicount15.bin-100
+tf.app.flags.DEFINE_string("traning_data_path","../train-zhihu4-only-title-all.txt","path of traning data.") #O.K.train-zhihu4-only-title-all.txt-->training-data/test-zhihu4-only-title.txt--->'training-data/train-zhihu5-only-title-multilabel.txt'
+tf.app.flags.DEFINE_string("word2vec_model_path","../zhihu-word2vec-title-desc.bin-100","word2vec's vocabulary and vectors") #zhihu-word2vec.bin-100-->zhihu-word2vec-multilabel-minicount15.bin-100
 tf.app.flags.DEFINE_boolean("multi_label_flag",True,"use multi label or single label.") #set this false. becase we are using it is a sequence of token here.
 tf.app.flags.DEFINE_integer("hidden_size",100,"hidden size")
 #tf.app.flags.DEFINE_float("l2_lambda", 0.0001, "l2 regularization")
 tf.app.flags.DEFINE_integer("story_length",1,"story length")
 tf.app.flags.DEFINE_integer("block_size",20,"block size")
+tf.app.flags.DEFINE_boolean("use_bi_lstm",True,"whether to use bi-directional lstm for encode of story and query")
 
 #1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
 def main(_):
@@ -53,7 +55,7 @@ def main(_):
         print("entity_network.vocab_size:",vocab_size)
         vocabulary_word2index_label,vocabulary_index2word_label = create_voabulary_label(name_scope="entity_networks")
         if FLAGS.multi_label_flag:
-            FLAGS.traning_data_path='training-data/train-zhihu6-title-desc.txt' #train
+            FLAGS.traning_data_path='../training-data/test-zhihu6-title-desc.txt' #train
         train,test,_=load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,multi_label_flag=FLAGS.multi_label_flag,
                                               traning_data_path=FLAGS.traning_data_path)
         trainX, trainY = train
@@ -77,7 +79,8 @@ def main(_):
         #num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,num_sentences,vocab_size,embed_size,
         #hidden_size,is_training
         model = EntityNetwork(FLAGS.num_classes, FLAGS.learning_rate, FLAGS.batch_size, FLAGS.decay_steps, FLAGS.decay_rate, FLAGS.sequence_length,
-                              FLAGS.story_length,vocab_size, FLAGS.embed_size, FLAGS.hidden_size, FLAGS.is_training, multi_label_flag=True, block_size=FLAGS.block_size)
+                              FLAGS.story_length,vocab_size, FLAGS.embed_size, FLAGS.hidden_size, FLAGS.is_training,
+                              multi_label_flag=True, block_size=FLAGS.block_size,use_bi_lstm=FLAGS.use_bi_lstm)
         #Initialize Save
         saver=tf.train.Saver()
         if os.path.exists(FLAGS.ckpt_dir+"checkpoint"):
@@ -108,23 +111,23 @@ def main(_):
                 curr_loss,curr_acc,_=sess.run([model.loss_val,model.accuracy,model.train_op],feed_dict) #curr_acc--->TextCNN.accuracy
                 loss,counter,acc=loss+curr_loss,counter+1,acc+curr_acc
                 if counter %50==0:
-                    print("entity_network==>Epoch %d\tBatch %d\tTrain Loss:%.3f\tTrain Accuracy:%.3f"
+                    print("entity_network2==>Epoch %d\tBatch %d\tTrain Loss:%.3f\tTrain Accuracy:%.3f"
                           %(epoch,counter,math.exp(loss/float(counter)) if (loss/float(counter))<20 else 10000.000,acc/float(counter))) #tTrain Accuracy:%.3f---》acc/float(counter)
                 ##VALIDATION VALIDATION VALIDATION PART######################################################################################################
                 if FLAGS.batch_size!=0 and (start%(FLAGS.validate_step*FLAGS.batch_size)==0): #(epoch % FLAGS.validate_every) or  if epoch % FLAGS.validate_every == 0:
                     eval_loss, eval_acc = do_eval(sess, model, testX, testY, batch_size,vocabulary_index2word_label)
-                    print("entity_network.validation.part. previous_eval_loss:", math.exp(previous_eval_loss) if previous_eval_loss<20 else 10000.000,";current_eval_loss:", math.exp(eval_loss) if eval_loss<20 else 10000.000)
+                    print("entity_network2.validation.part. previous_eval_loss:", math.exp(previous_eval_loss) if previous_eval_loss<20 else 10000.000,";current_eval_loss:", math.exp(eval_loss) if eval_loss<20 else 10000.000)
                     if eval_loss > previous_eval_loss: #if loss is not decreasing
                         # reduce the learning rate by a factor of 0.5
-                        print("entity_network==>validation.part.going to reduce the learning rate.")
+                        print("entity_network2==>validation.part.going to reduce the learning rate.")
                         learning_rate1 = sess.run(model.learning_rate)
                         lrr=sess.run([model.learning_rate_decay_half_op])
                         learning_rate2 = sess.run(model.learning_rate)
-                        print("entity_network==>validation.part.learning_rate1:", learning_rate1, " ;learning_rate2:",learning_rate2)
+                        print("entity_network2==>validation.part.learning_rate1:", learning_rate1, " ;learning_rate2:",learning_rate2)
                     #print("HierAtten==>Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch, eval_loss, eval_acc))
                     else:# loss is decreasing
                         if eval_loss<best_eval_loss:
-                            print("entity_network==>going to save the model.eval_loss:",math.exp(eval_loss) if eval_loss<20 else 10000.000,";best_eval_loss:",math.exp(best_eval_loss) if best_eval_loss<20 else 10000.000)
+                            print("entity_network2==>going to save the model.eval_loss:",math.exp(eval_loss) if eval_loss<20 else 10000.000,";best_eval_loss:",math.exp(best_eval_loss) if best_eval_loss<20 else 10000.000)
                             # save model to checkpoint
                             save_path = FLAGS.ckpt_dir + "model.ckpt"
                             saver.save(sess, save_path, global_step=epoch)
