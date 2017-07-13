@@ -40,7 +40,7 @@ Performance
 
 Model    | fastText  | TextCNN | TextRNN | RCNN  | HierAtteNetwork| Seq2seqWithAttention| EntityNetwork
 ---      | ---       | ---     | ---     |---    |---             |---                  |---
-Score    | 0.362     |  0.405  |  0.358  | 0.395 | 0.398          | 0.322               | 0.392     
+Score    | 0.362     |  0.405  |  0.358  | 0.395 | 0.398          | 0.322               | 0.398   
 Training | 10 minutes| 2 hours | 10 hours|2 hours| 2 hours        | 3 hours             | 3 hour      
 ----------------------------------------------------------------------------------------------------------------
 notice: 'HierAtteNetwork' means Hierarchical Attention Networkk
@@ -278,6 +278,8 @@ Input:1. story: it is multi-sentences, as context. 2.query: a sentence, which is
 Model Structure:
 
 1) Input encoding: use bag of word to encode story(context) and query(question); take account of position by using position mask
+
+   by using bi-directional rnn to encode story and query, performance boost from 0.392 to 0.398, increase 1.5%.
 
 2) Dynamic memory: 
 
