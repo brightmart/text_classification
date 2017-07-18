@@ -330,17 +330,19 @@ Reference:
 
 2.Convolutional Neural Networks for Sentence Classification
 
-3.Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow, from www.wildml.com
+3.A Sensitivity Analysis of (and Practitioners' Guide to) Convolutional Neural Networks for Sentence Classification
 
-4.Recurrent Convolutional Neural Network for Text Classification
+4.Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow, from www.wildml.com
 
-5.Hierarchical Attention Networks for Document Classification
+5.Recurrent Convolutional Neural Network for Text Classification
 
-6.Neural Machine Translation by Jointly Learning to Align and Translate
+6.Hierarchical Attention Networks for Document Classification
 
-7.Attention Is All You Need
+7.Neural Machine Translation by Jointly Learning to Align and Translate
 
-8.Tracking the state of world with recurrent entity networks
+8.Attention Is All You Need
+
+9.Tracking the state of world with recurrent entity networks
 
 
 -------------------------------------------------------------------------
