@@ -317,6 +317,7 @@ under this model, it has a test function, which ask this model to count numbers 
 -------------------------------------------------------------------------
 Modules:
 Outlook:
+
 1.Input Module: encode raw texts into vector representation
 
 2.Question Module: encode question into vector representation
@@ -326,6 +327,7 @@ Outlook:
 4.Answer Module:generate an answer from the final memory vector.
 
 Detail:
+
 1.Input Module:
 
   a.single sentence: use gru to get hidden state
