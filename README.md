@@ -316,7 +316,7 @@ under this model, it has a test function, which ask this model to count numbers 
 12.Dynamic Memory Network
 -------------------------------------------------------------------------
 Modules:
-
+Outlook:
 1.Input Module: encode raw texts into vector representation
 
 2.Question Module: encode question into vector representation
@@ -324,6 +324,31 @@ Modules:
 3.Episodic Memory Module: with inputs,it chooses which parts of inputs to focus on through the attention mechanism, taking into account of question and previous memory====>it poduce a 'memory' vecotr.
 
 4.Answer Module:generate an answer from the final memory vector.
+
+Detail:
+1.Input Module:
+
+  a.single sentence: use gru to get hidden state
+  b.list of sentences: use gru to get the hidden states for each sentence. e.g. [hidden states 1,hidden states 2, hidden states...,hidden state n]
+  
+2.Question Module:
+  use gru to get hidden state
+  
+3.Episodic Memory Module:
+
+  use an attention mechanism and recurrent network to updates its memory. 
+  
+  a.need for multiple episodes===>transitive inference. 
+  
+     e.g. ask where is the football? it will attend to sentence of "john put down the football"), then in second pass, it need to attend location of john.
+     
+  b.attention mechanism:
+  
+     two-layer feed forward nueral network.input is candidate fact c,previous memory m and question q. feature get by take: element-wise,matmul and absolute distance of q with c, and q with m.
+     
+  c.memory update mechanism: h=f(c,h_previous,g). the last hidden state is the input for answer module.
+
+4.Answer Module:
 
 -------------------------------------------------------------------------
 
