@@ -28,7 +28,9 @@ Models:
 5) Hierarchical Attention Network    
 6) seq2seq with attention   
 7) Transformer("Attend Is All You Need")
-8) EntityNetwork:tracking state of the world
+8) Dynamic Memory Network
+9) EntityNetwork:tracking state of the world
+
 
 and other models:
 BiLstmTextRelation; twoCNNTextRelation; BiLstmTextRelationTwoRNN
@@ -310,6 +312,15 @@ under this model, it has a test function, which ask this model to count numbers 
 
 -------------------------------------------------------------------------
 
+12.Dynamic Memory Network
+-------------------------------------------------------------------------
+Modules:
+1.Input Module: encode raw texts into vector representation
+2.Question Module: encode question into vector representation
+3.Episodic Memory Module: with inputs,it chooses which parts of inputs to focus on through the attention mechanism, taking into account of question and previous memory====>it poduce a 'memory' vecotr.
+4.Answer Module:generate an answer from the final memory vector.
+
+-------------------------------------------------------------------------
 
 TODO 
 -------------------------------------------------------------------------------------------------------
@@ -342,7 +353,9 @@ Reference:
 
 8.Attention Is All You Need
 
-9.Tracking the state of world with recurrent entity networks
+9.Ask Me Anything:Dynamic Memory Networks for Natural Language Processing
+
+10.Tracking the state of world with recurrent entity networks
 
 
 -------------------------------------------------------------------------
