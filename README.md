@@ -315,9 +315,13 @@ under this model, it has a test function, which ask this model to count numbers 
 12.Dynamic Memory Network
 -------------------------------------------------------------------------
 Modules:
+
 1.Input Module: encode raw texts into vector representation
+
 2.Question Module: encode question into vector representation
+
 3.Episodic Memory Module: with inputs,it chooses which parts of inputs to focus on through the attention mechanism, taking into account of question and previous memory====>it poduce a 'memory' vecotr.
+
 4.Answer Module:generate an answer from the final memory vector.
 
 -------------------------------------------------------------------------
