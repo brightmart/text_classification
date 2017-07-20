@@ -33,7 +33,9 @@ Models:
 
 
 and other models:
-BiLstmTextRelation; twoCNNTextRelation; BiLstmTextRelationTwoRNN
+BiLstmTextRelation; 
+twoCNNTextRelation; 
+BiLstmTextRelationTwoRNN
 
 Performance
 -------------------------------------------------------------------------
@@ -61,7 +63,7 @@ Environment:
 -------------------------------------------------------------------------------------------------------
 python 2.7+ tensorflow 1.1
 
-(most of models should also work fine in other tensorflow version, since we use very few features bond to certain version.)
+(tensorflow 1.2 also works; most of models should also work fine in other tensorflow version, since we use very few features bond to certain version; if you use python 3.5, it will be fine as long as you change print/try catch function)
 
 -------------------------------------------------------------------------
 
