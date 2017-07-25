@@ -14,6 +14,8 @@ we also explore two seq2seq model(seq2seq with attention,transformer: attention 
 
 we implement one memory network: recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task.
 
+if you need some sample data, you can find it in closed issues.
+
 if you want to know more detail about dataset of text classification or task these models can be used, one of choose is below:
 https://biendata.com/competition/zhihu/
 
