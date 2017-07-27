@@ -33,14 +33,13 @@ Models:
 8) Dynamic Memory Network
 9) EntityNetwork:tracking state of the world
 
-
 and other models:
 
-BiLstmTextRelation;
+1) BiLstmTextRelation;
 
-twoCNNTextRelation;
+2) twoCNNTextRelation;
 
-BiLstmTextRelationTwoRNN
+3) BiLstmTextRelationTwoRNN
 
 Performance
 -------------------------------------------------------------------------
