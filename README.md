@@ -35,8 +35,11 @@ Models:
 
 
 and other models:
-BiLstmTextRelation; 
-twoCNNTextRelation; 
+
+BiLstmTextRelation;
+
+twoCNNTextRelation;
+
 BiLstmTextRelationTwoRNN
 
 Performance
