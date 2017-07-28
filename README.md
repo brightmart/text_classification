@@ -8,11 +8,15 @@ it also support for multi-label classification where multi label associate with 
 
 although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
 
-each model has a test function under model class.
+each model has a test function under model class. you can run it performance toy task first. the model is indenpendent from dataset.
 
-we also explore two seq2seq model(seq2seq with attention,transformer: attention is all you need) to do text classification. and these two models can also be used for sequences generating, and other tasks. if you task is a multi-label classification, you can cast the problem to sequences generating.
+serveral modes here can also be used for modelling question answering (with or without context), or to do sequences generating. 
 
-we implement one memory network: recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task.
+we explore two seq2seq model(seq2seq with attention,transformer: attention is all you need) to do text classification. and these two models can also be used for sequences generating and other tasks. if you task is a multi-label classification, you can cast the problem to sequences generating.
+
+we implement two memory network. one is another is dynamic memory network. previously it reach state of art in question answering, sentiment analysis and sequence generating task. it so called one model to do serveral differnent tasks, and reach high performance. it has four modules. the key component episodic memory module. it need gate mechanism to performance attention, and use gated-gru to update episode memory, then it has another gru( in a vertical direction) to pefromance hidden state update. it has ability to do transitive inference.
+
+the second memory network is recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task.
 
 if you need some sample data, you can find it in closed issues.
 
