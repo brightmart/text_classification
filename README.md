@@ -242,10 +242,8 @@ V.Notices:
 
 10.Transformer("Attention Is All You Need")
 -------------
-Status: 
-
-Just finish main part, and able to output reverse order of its sequences, and do it in parallell style.
-layer normalization,residual connection, and mask are also used in the model.
+Status: Just finish main part, and able to generate reverse order of its sequences in toy task. you can check it by running test function in the model. however, i was not able to get useful result in real task yet.
+we do it in parallell style.layer normalization,residual connection, and mask are also used in the model. 
 
 For every building blocks, we include a test function in the each file below, and we've test each small piece successfully.
 
