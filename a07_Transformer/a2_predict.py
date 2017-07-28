@@ -99,7 +99,7 @@ def main(_):
             #                                   })
             #    decoder_input[:,j] = predict[:,j]
            ####################################################################################
-            print("===============>",start,"predict:",predict)
+            #print("===============>",start,"predict:",predict)
             # 6. get lable using logtis
             for _,logit in enumerate(logits):
                 predicted_labels=get_label_using_logits(logit,predictions,vocabulary_index2word_label,vocabulary_word2index_label)
