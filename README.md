@@ -282,7 +282,7 @@ for detail of the model, please check: a2_transformer.py
 -------------------------------------------------------------------------
 
 11. Recurrent Entity Network
--------------------------------------------------------------------------
+----------------
 
 Input:1. story: it is multi-sentences, as context. 2.query: a sentence, which is a question, 3. ansewr: a single label.
 
@@ -323,8 +323,7 @@ under this model, it has a test function, which ask this model to count numbers 
 
 12.Dynamic Memory Network
 -------------------------------------------------------------------------
-Modules:
-Outlook:
+Outlook of Model:
 
 1.Input Module: encode raw texts into vector representation
 
@@ -347,18 +346,19 @@ Detail:
 3.Episodic Memory Module:
 
   use an attention mechanism and recurrent network to updates its memory. 
-  
-  a.need for multiple episodes===>transitive inference. 
-  
-     e.g. ask where is the football? it will attend to sentence of "john put down the football"), then in second pass, it need to attend location of john.
      
-  b.attention mechanism:
+  a. gate as attention mechanism:
   
-     two-layer feed forward nueral network.input is candidate fact c,previous memory m and question q. feature get by take: element-wise,matmul and absolute distance of q with c, and q with m.
+     two-layer feed forward nueral network.input is candidate fact c,previous memory m and question q. features get by take: element-wise,matmul and absolute distance of q with c, and q with m.
      
-  c.memory update mechanism: h=f(c,h_previous,g). the last hidden state is the input for answer module.
+  b.memory update mechanism: take candidate sentence, gate and previous hidden state, it use gated-gru to update hidden state. like: h=f(c,h_previous,g). the final hidden state is the input for answer module.
+  
+  c.need for multiple episodes===>transitive inference. 
+  
+  e.g. ask where is the football? it will attend to sentence of "john put down the football"), then in second pass, it need to attend location of john.
 
 4.Answer Module:
+take the final epsoidic memory, question, it update hidden state of answer module.
 
 -------------------------------------------------------------------------
 
