@@ -16,7 +16,7 @@ we explore two seq2seq model(seq2seq with attention,transformer: attention is al
 
 we implement two memory network. one is another is dynamic memory network. previously it reach state of art in question answering, sentiment analysis and sequence generating task. it so called one model to do serveral differnent tasks, and reach high performance. it has four modules. the key component episodic memory module. it need gate mechanism to performance attention, and use gated-gru to update episode memory, then it has another gru( in a vertical direction) to pefromance hidden state update. it has ability to do transitive inference.
 
-the second memory network is recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task.
+the second memory network is recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task. 
 
 if you need some sample data, you can find it in closed issues.
 
