@@ -53,9 +53,10 @@ Performance
 Model   | fastText|TextCNN|TextRNN| RCNN | HierAtteNet|Seq2seqAttn|EntityNet|DynamicMemory
 ---     | ---     | ---   | ---   |---   |---         |---        |---      |---
 Score   | 0.362   |  0.405| 0.358 | 0.395| 0.398      |0.322      |0.400    |0.386
-Training| 10 m    |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h
+Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h
 -------------------------------------------------------------------------------------------
  Notice: 
+ 'm' stand for minutes; 'h' stand for hours.
 'HierAtteNet' means Hierarchical Attention Networkk;
 'Seq2seqAttn' means Seq2seq with attention;
 'DynamicMemory' means DynamicMemoryNetwork;
