@@ -15,7 +15,7 @@ from tensorflow.contrib import rnn
 
 class DynamicMemoryNetwork:
     def __init__(self, num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length, story_length,
-                 vocab_size, embed_size,hidden_size, is_training, num_pass=2,use_gated_gru=False,sequence_decoder=False,multi_label_flag=False,block_size=20,
+                 vocab_size, embed_size,hidden_size, is_training, num_pass=2,use_gated_gru=False,decode_with_sequences=False,multi_label_flag=False,block_size=20,
                  initializer=tf.random_normal_initializer(stddev=0.1),clip_gradients=5.0,use_bi_lstm=False,use_additive_attention=False):#0.01
         """init all hyperparameter here"""
         # set hyperparamter
@@ -25,7 +25,7 @@ class DynamicMemoryNetwork:
         self.vocab_size = vocab_size
         self.embed_size = embed_size
         self.is_training = is_training
-        self.learning_rate = tf.Variable(learning_rate, trainable=False, name="learning_rate")#TODO ADD learning_rate
+        self.learning_rate = tf.Variable(learning_rate, trainable=False, name="learning_rate")
         self.learning_rate_decay_half_op = tf.assign(self.learning_rate, self.learning_rate * 0.5)
         self.initializer = initializer
         self.multi_label_flag = multi_label_flag
@@ -38,10 +38,9 @@ class DynamicMemoryNetwork:
         self.use_additive_attention=use_additive_attention
         self.num_pass=num_pass #number of pass to run for episodic memory module. for example, num_pass=2
         self.use_gated_gru=use_gated_gru #if this is True. we will use gated gru as our 'Memory Update Mechanism'
-        self.sequence_decoder=sequence_decoder
+        self.decode_with_sequences=decode_with_sequences
 
         # add placeholder (X,label)
-        # self.input_x = tf.placeholder(tf.int32, [None, self.num_sentences,self.sequence_length], name="input_x")  # X
         self.story=tf.placeholder(tf.int32,[None,self.story_length,self.sequence_length],name="story")
         self.query = tf.placeholder(tf.int32, [None, self.sequence_length], name="question")
 
@@ -93,7 +92,6 @@ class DynamicMemoryNetwork:
         hidden_state=tf.ones((self.batch_size,self.hidden_size),dtype=tf.float32)
         cell = rnn.GRUCell(self.hidden_size)
         self.story_embedding,hidden_state=tf.nn.dynamic_rnn(cell,story_embedding,dtype=tf.float32,scope="input_module")
-        print("1.input_module.self.story_embedding:",self.story_embedding)
 
     def question_module(self):
         """
@@ -103,9 +101,8 @@ class DynamicMemoryNetwork:
         query_embedding = tf.nn.embedding_lookup(self.Embedding, self.query)  # [batch_size,sequence_length,embed_size]
         cell=rnn.GRUCell(self.hidden_size)
         _,self.query_embedding=tf.nn.dynamic_rnn(cell,query_embedding,dtype=tf.float32,scope="question_module") #query_embedding:[batch_size,hidden_size]
-        print("2.input_module.self.query_embedding:", self.query_embedding)
 
-    def episodic_memory_module(self):#input(story)
+    def episodic_memory_module(self):#input(story):[batch_size,story_length,hidden_size]
         """
         episodic memory module
         1.combine features
@@ -117,49 +114,30 @@ class DynamicMemoryNetwork:
         input: story(from input module):[batch_size,story_length,hidden_size]
         output: last hidden state:[batch_size,hidden_size]
         """
-        #self.story_embedding. [batch_size,story_length,hidden_size]
         candidate_inputs=tf.split(self.story_embedding,self.story_length,axis=1) # a list. length is: story_length. each element is:[batch_size,1,embedding_size]
         candidate_list=[tf.squeeze(x,axis=1) for x in candidate_inputs]          # a list. length is: story_length. each element is:[batch_size  ,embedding_size]
-        print("3.1.candidate_list:",candidate_list)
         m_current=self.query_embedding
-
         h_current = tf.zeros((self.batch_size, self.hidden_size))
-        #for each candidate sentence in the list,do loop.
-        for pass_number in range(self.num_pass):
+        for pass_number in range(self.num_pass):#for each candidate sentence in the list,do loop.
             # 1. attention mechansim.take fact representation c,question q,previous memory m_previous
-            g = self.attention_mechanism_parallel(self.story_embedding, m_current,self.query_embedding)  # [batch_size,story_length]
-            print("3.2.gate1 possibility distribution:", g) #[batch_size,story_length]
-
-
-            if self.use_gated_gru:
+            g = self.attention_mechanism_parallel(self.story_embedding, m_current,self.query_embedding,pass_number)  # [batch_size,story_length]
+            # 2.below is Memory Update Mechanism
+            if self.use_gated_gru: #use gated gru to update episode. this is default method.
                 g = tf.split(g, self.story_length,axis=1)  # a list. length is: sequence_length. each element is:[batch_size,1]
-                print("3.3.gate2 possibility distribution:", g)
-                # 2. use gated-gru to update hidden state
+                # 2.1 use gated-gru to update hidden state
                 for i,c_current in enumerate(candidate_list):
                     g_current=g[i] #[batch_size,1]
                     h_current=self.gated_gru(c_current,h_current,g_current) #h_current:[batch_size,hidden_size]. g[i] represent score( a scalar) for current candidate sentence:c_current.
-
-                #3. assign last hidden state to e(episodic)
+                # 2.2 assign last hidden state to e(episodic)
                 e_i=h_current #[batch_size,hidden_size]
-                iii = 0
-                iii / 0
-
-            else: #for question answering
-                #compuate e_i directly using weighted sum of candidate sentence. weight is given by gate.
-                p_gate=tf.nn.softmax(g,dim=1)            #[batch_size,story_length]. compute weight
-                p_gate=tf.expand_dims(p_gate,axis=2)     #[batch_size,story_length,1]
+            else: #use weighted sum to get episode(e.g. used in question answering)
+                p_gate=tf.nn.softmax(g,dim=1)                #[batch_size,story_length]. compute weight
+                p_gate=tf.expand_dims(p_gate,axis=2)         #[batch_size,story_length,1]
                 e_i=tf.multiply(p_gate,self.story_embedding) #[batch_size,story_length,hidden_size]
-                print("e_i:",e_i) #[batch_size,story_length,hidden_size]=(8, 3, 100)
-
-            #4. use gru to update episodic memory m_i
-            print("pass_number:",pass_number)
-            print("====", e_i, m_current,"gru_episodic_memory")
-            m_current=self.gru_cell(self, e_i, m_current,"gru_episodic_memory") #[batch_size,hidden_size]
-            print("m_current:", m_current)
-            iii = 0
-            iii / 0
+                e_i=tf.reduce_sum(e_i,axis=1)                #[batch_size,story_length]
+            #3. use gru to update episodic memory m_i
+            m_current=self.gru_cell(e_i, m_current,"gru_episodic_memory") #[batch_size,hidden_size]
         self.m_T=m_current #[batch_size,hidden_size]
-        print("3.episodic_memory_module.self.m_T:",self.m_T)
 
     def answer_module(self):
         """ Answer Module:generate an answer from the final memory vector.
@@ -167,24 +145,23 @@ class DynamicMemoryNetwork:
             hidden state from episodic memory module:[batch_size,hidden_size]
             question:[batch_size, embedding_size]
         """
-        steps=self.sequence_length if self.sequence_decoder else 1 #decoder for a list of tokens with sequence. e.g."x1 x2 x3 x4..."
+        steps=self.sequence_length if self.decode_with_sequences else 1 #decoder for a list of tokens with sequence. e.g."x1 x2 x3 x4..."
         a=self.m_T #init hidden state
-        y_pred=tf.ones((self.batch_size,self.hidden_size)) #TODO usually we will init this as a special token '<GO>', you can change this line by pass embedding of '<GO>' from outside.
+        y_pred=tf.zeros((self.batch_size,self.hidden_size)) #TODO usually we will init this as a special token '<GO>', you can change this line by pass embedding of '<GO>' from outside.
         logits_list=[]
+        logits_return=None
         for i in range(steps):
             cell = rnn.GRUCell(self.hidden_size)
-            y_previous_q=tf.concat([y_pred,self.query_embedding]) #[batch_hidden_size*2]
+            y_previous_q=tf.concat([y_pred,self.query_embedding],axis=1) #[batch_hidden_size*2]
             _, a = cell( y_previous_q,a)
-            logits=tf.matmul(tf.layers.dense(a,units=self.num_classes)) #[batch_size,vocab_size]
-
-            #y_pred=tf.nn.softmax(logits) #[batch_size,vocab_size]
+            logits=tf.layers.dense(a,units=self.num_classes) #[batch_size,vocab_size]
             logits_list.append(logits)
+        if self.decode_with_sequences:#need to get sequences.
+            logits_return = tf.stack(logits_list, axis=1)  # [batch_size,sequence_length,num_classes]
+        else:#only need to get an answer, not sequences
+            logits_return = logits_list[0]  #[batcj_size,num_classes]
 
-        if not self.sequence_decoder:
-            self.logits=logits_list[0]
-        else:
-            self.logits=tf.stack(logits_list,axis=1) #[batch_size,sequence_length,vocab_size]
-
+        return logits_return
     def gated_gru(self,c_current,h_previous,g_current):
         """
         gated gru to get updated hidden state
@@ -199,7 +176,7 @@ class DynamicMemoryNetwork:
         h_current=tf.multiply(g_current,h_candidate)+tf.multiply(1-g_current,h_previous) #[batch_size,hidden_size]
         return h_current
 
-    def attention_mechanism_parallel(self,c_full,m,q):
+    def attention_mechanism_parallel(self,c_full,m,q,i):
         """ parallel implemtation of gate function given a list of candidate sentence, a query, and previous memory.
         Input:
            c_full: candidate fact. shape:[batch_size,story_length,hidden_size]
@@ -216,8 +193,8 @@ class DynamicMemoryNetwork:
         c_q_minus=tf.abs(tf.subtract(c_full,q))        #[batch_size,story_length,hidden_size]
         c_m_minus=tf.abs(tf.subtract(c_full,m))        #[batch_size,story_length,hidden_size]
         # c_transpose Wq
-        c_w_q=self.x1Wx2_parallel(c_full,q,"c_w_q")   #[batch_size,story_length,hidden_size]
-        c_w_m=self.x1Wx2_parallel(c_full,m,"c_w_m")   #[batch_size,story_length,hidden_size]
+        c_w_q=self.x1Wx2_parallel(c_full,q,"c_w_q"+str(i))   #[batch_size,story_length,hidden_size]
+        c_w_m=self.x1Wx2_parallel(c_full,m,"c_w_m"+str(i))   #[batch_size,story_length,hidden_size]
         # c_transposeWm
         q_tile=tf.tile(q,[1,self.story_length,1])     #[batch_size,story_length,hidden_size]
         m_tile=tf.tile(m,[1,self.story_length,1])     #[batch_size,story_length,hidden_size]
@@ -349,7 +326,10 @@ class DynamicMemoryNetwork:
             self.Embedding = tf.get_variable("Embedding", shape=[self.vocab_size, self.embed_size],initializer=self.initializer)
 
 # test: learn to count. weight of query and story is different
-def test():
+#to step to test
+#step1. run train function to train the model. it will save checkpoint
+#step2. run predict function to make a prediction based on the model restore from the checkpoint.
+def train():
     # below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
     num_classes = 15
     learning_rate = 0.001
@@ -367,7 +347,7 @@ def test():
     model = DynamicMemoryNetwork(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
                           story_length, vocab_size, embed_size, hidden_size, is_training,
                           multi_label_flag=False, block_size=20,use_bi_lstm=use_bi_lstm)
-    ckpt_dir = 'checkpoint_entity_network/dummy_test/'
+    ckpt_dir = 'checkpoint_dmn/dummy_test/'
     saver = tf.train.Saver()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -407,12 +387,12 @@ def predict():
     model = DynamicMemoryNetwork(num_classes, learning_rate, batch_size, decay_steps, decay_rate, sequence_length,
                           story_length, vocab_size, embed_size, hidden_size, is_training,
                           multi_label_flag=False, block_size=20)
-    ckpt_dir = 'checkpoint_entity_network/dummy_test/'
+    ckpt_dir = 'checkpoint_dmn/dummy_test/'
     saver = tf.train.Saver()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         saver.restore(sess, tf.train.latest_checkpoint(ckpt_dir))
-        for i in range(1500):
+        for i in range(100):
             story = np.random.randn(batch_size, story_length, sequence_length)
             story[story > 0] = 1
             story[story <= 0] = 0
@@ -424,6 +404,7 @@ def predict():
                                                                model.dropout_keep_prob: dropout_keep_prob})
             print(i, "query:", query, "=====================>")
             print(i, "label:", answer_single, "prediction:", predict)
-
-test()
+#1.train the model
+#train()
+#2.make a prediction based on the learned model.
 #predict()
