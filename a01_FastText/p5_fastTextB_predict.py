@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 #prediction using model.
 #process--->1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.predict
+try:
+    reload                        # Python 2
+except NameError:
+    from importlib import reload  # Python 3
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
