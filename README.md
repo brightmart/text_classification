@@ -36,6 +36,7 @@ Models:
 7) Transformer("Attend Is All You Need")
 8) Dynamic Memory Network
 9) EntityNetwork:tracking state of the world
+10) Ensemble models
 
 and other models:
 
@@ -375,6 +376,7 @@ TODO
 
 4.Adversarial Training Methods For Semi-supervised Text Classification
 
+5.Ensemble Models
 -------------------------------------------------------------------------
 
 
