@@ -6,7 +6,7 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 import tensorflow as tf
 import numpy as np
-from a07_Transformer import  Transformer
+from a2_transformer_classification import  Transformer
 from data_util_zhihu import load_data_multilabel_new,create_voabulary,create_voabulary_label
 from tflearn.data_utils import to_categorical, pad_sequences
 import os,math
@@ -17,22 +17,22 @@ import pickle
 FLAGS=tf.app.flags.FLAGS
 tf.app.flags.DEFINE_integer("num_classes",1999+3,"number of label") #3 ADDITIONAL TOKEN: _GO,_END,_PAD
 tf.app.flags.DEFINE_float("learning_rate",0.01,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 128, "Batch size for training/evaluating.") #批处理的大小 32-->128-->512
-tf.app.flags.DEFINE_integer("decay_steps", 6000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
+tf.app.flags.DEFINE_integer("batch_size", 256, "Batch size for training/evaluating.") #批处理的大小 32-->128-->512
+tf.app.flags.DEFINE_integer("decay_steps", 12000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
 tf.app.flags.DEFINE_float("decay_rate", 1.0, "Rate of decay for learning rate.") #0.87一次衰减多少
-tf.app.flags.DEFINE_string("ckpt_dir","checkpoint_transformer/","checkpoint location for the model")
-tf.app.flags.DEFINE_integer("sequence_length",25,"max sentence length") #25
+tf.app.flags.DEFINE_string("ckpt_dir","../checkpoint_transformer_classification/","checkpoint location for the model")
+tf.app.flags.DEFINE_integer("sequence_length",60,"max sentence length")
 tf.app.flags.DEFINE_integer("embed_size",512,"embedding size")
 tf.app.flags.DEFINE_boolean("is_training",True,"is traning.true:tranining,false:testing/inference")
 tf.app.flags.DEFINE_integer("num_epochs",10,"number of epochs to run.")
 tf.app.flags.DEFINE_integer("validate_every", 1, "Validate every validate_every epochs.") #每10轮做一次验证
-tf.app.flags.DEFINE_integer("validate_step", 1000, "how many step to validate.") #1500做一次检验
+tf.app.flags.DEFINE_integer("validate_step", 2000, "how many step to validate.") #1500做一次检验
 tf.app.flags.DEFINE_boolean("use_embedding",True,"whether to use embedding or not.")
 #tf.app.flags.DEFINE_string("cache_path","text_cnn_checkpoint/data_cache.pik","checkpoint location for the model")
 #train-zhihu4-only-title-all.txt
-tf.app.flags.DEFINE_string("traning_data_path","train-zhihu4-only-title-all.txt","path of traning data.") #O.K.train-zhihu4-only-title-all.txt-->training-data/test-zhihu4-only-title.txt--->'training-data/train-zhihu5-only-title-multilabel.txt'
-tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec-title-desc.bin-512","word2vec's vocabulary and vectors") #zhihu-word2vec.bin-100-->zhihu-word2vec-multilabel-minicount15.bin-100
-tf.app.flags.DEFINE_boolean("multi_label_flag",True,"use multi label or single label.") #set this false. becase we are using it is a sequence of token here.
+tf.app.flags.DEFINE_string("traning_data_path","../train-zhihu4-only-title-all.txt","path of traning data.") #test-zhihu4-only-title-all.txt.one record like this:'w183364 w11 w3484 w3125 w155457 w111 __label__-2086863971949478092'
+tf.app.flags.DEFINE_string("word2vec_model_path","../zhihu-word2vec-title-desc.bin-512","word2vec's vocabulary and vectors") #zhihu-word2vec.bin-100-->zhihu-word2vec-multilabel-minicount15.bin-100
+tf.app.flags.DEFINE_boolean("multi_label_flag",False,"use multi label or single label.") #set this false. becase we are using it is a sequence of token here.
 tf.app.flags.DEFINE_float("l2_lambda", 0.0001, "l2 regularization")
 
 tf.app.flags.DEFINE_integer("d_model",512,"hidden size")
@@ -40,7 +40,6 @@ tf.app.flags.DEFINE_integer("d_k",64,"hidden size")
 tf.app.flags.DEFINE_integer("d_v",64,"hidden size")
 tf.app.flags.DEFINE_integer("h",8,"hidden size")
 tf.app.flags.DEFINE_integer("num_layer",1,"hidden size") #6
-tf.app.flags.DEFINE_integer("decoder_sent_length",25,"length of decoder inputs") #decoder sentence length should be 6 here.
 
 #1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
 def main(_):
@@ -52,19 +51,18 @@ def main(_):
     #else:
     if 1==1:
         trainX, trainY, testX, testY = None, None, None, None
-        vocabulary_word2index, vocabulary_index2word = create_voabulary(word2vec_model_path=FLAGS.word2vec_model_path,name_scope="transformer") #simple='simple'
+        vocabulary_word2index, vocabulary_index2word = create_voabulary(word2vec_model_path=FLAGS.word2vec_model_path,name_scope="transformer_classification") #simple='simple'
         vocab_size = len(vocabulary_word2index)
         print("transformer.vocab_size:",vocab_size)
-        vocabulary_word2index_label,vocabulary_index2word_label = create_voabulary_label(name_scope="transformer",use_seq2seq=True)
+        vocabulary_word2index_label,vocabulary_index2word_label = create_voabulary_label(name_scope="transformer_classification")
         if FLAGS.multi_label_flag:
-            FLAGS.traning_data_path='training-data/train-zhihu6-title-desc.txt' #train
+            FLAGS.traning_data_path='training-data/test-zhihu6-title-desc.txt' #one record like this:'w35620 w1097 w111 c278 c150 c150 c285 c278 c43 __label__7756633728210171144 3195914392210930723'
         train,test,_=load_data_multilabel_new(vocabulary_word2index,vocabulary_word2index_label,multi_label_flag=FLAGS.multi_label_flag,
-                                              use_seq2seq=True,traning_data_path=FLAGS.traning_data_path,seq2seq_label_length=FLAGS.decoder_sent_length) #TODO
-        trainX, trainY,train_decoder_input = train
-        testX, testY,test_decoder_input = test
+                                              traning_data_path=FLAGS.traning_data_path)
+        trainX, trainY, = train
+        testX, testY = test
 
         print("trainY:",trainY[0:10])
-        print("train_decoder_input:",train_decoder_input[0:10])
         # 2.Data preprocessing.Sequence padding
         print("start padding & transform to one hot...")
         trainX = pad_sequences(trainX, maxlen=FLAGS.sequence_length, value=0.)  # padding to max length
@@ -80,8 +78,7 @@ def main(_):
     with tf.Session(config=config) as sess:
         #Instantiate Model
         model=Transformer(FLAGS.num_classes, FLAGS.learning_rate, FLAGS.batch_size, FLAGS.decay_steps, FLAGS.decay_rate, FLAGS.sequence_length,
-                 vocab_size, FLAGS.embed_size,FLAGS.d_model,FLAGS.d_k,FLAGS.d_v,FLAGS.h,FLAGS.num_layer,FLAGS.is_training,
-                          decoder_sent_length=FLAGS.sequence_length,l2_lambda=FLAGS.l2_lambda) #TODO decoder_sent_length=FLAGS.sequence_length
+                 vocab_size, FLAGS.embed_size,FLAGS.d_model,FLAGS.d_k,FLAGS.d_v,FLAGS.h,FLAGS.num_layer,FLAGS.is_training,l2_lambda=FLAGS.l2_lambda)
         #Initialize Save
         saver=tf.train.Saver()
         if os.path.exists(FLAGS.ckpt_dir+"checkpoint"):
@@ -103,32 +100,28 @@ def main(_):
             loss, acc, counter = 0.0, 0.0, 0
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
                 if epoch==0 and counter==0:
-                    print("trainX[start:end]:",trainX[start:end])#;print("trainY[start:end]:",trainY[start:end])
+                    print("trainX[start:end]:",trainX[start:end])
                 feed_dict = {model.input_x: trainX[start:end],model.dropout_keep_prob: 0.5}
-                if not FLAGS.multi_label_flag:
-                    feed_dict[model.input_y] = trainY[start:end]
-                else:
-                    feed_dict[model.input_y_label]=trainY[start:end]
-                    feed_dict[model.decoder_input] = train_decoder_input[start:end]
+                feed_dict[model.input_y_label]=trainY[start:end]
                 curr_loss,curr_acc,_=sess.run([model.loss_val,model.accuracy,model.train_op],feed_dict) #curr_acc--->TextCNN.accuracy
                 loss,counter,acc=loss+curr_loss,counter+1,acc+curr_acc
                 if counter %50==0:
-                    print("transformer==>Epoch %d\tBatch %d\tTrain Loss:%.3f\tTrain Accuracy:%.3f" %(epoch,counter,math.exp(loss/float(counter)) if (loss/float(counter))<20 else 10000.000,acc/float(counter))) #tTrain Accuracy:%.3f---》acc/float(counter)
+                    print("transformer.classification==>Epoch %d\tBatch %d\tTrain Loss:%.3f\tTrain Accuracy:%.3f" %(epoch,counter,loss/float(counter),acc/float(counter))) #tTrain Accuracy:%.3f---》acc/float(counter)
                 ##VALIDATION VALIDATION VALIDATION PART######################################################################################################
-                if FLAGS.batch_size!=0 and (start%(FLAGS.validate_step*FLAGS.batch_size)==0): #(epoch % FLAGS.validate_every) or  if epoch % FLAGS.validate_every == 0:
-                    eval_loss, eval_acc = do_eval(sess, model, testX, testY, batch_size,vocabulary_index2word_label,eval_decoder_input=test_decoder_input)
-                    print("transformer.validation.part. previous_eval_loss:", math.exp(previous_eval_loss) if previous_eval_loss<20 else 10000.000,";current_eval_loss:", math.exp(eval_loss) if eval_loss<20 else 10000.000)
+                if FLAGS.batch_size!=0 and (start%(FLAGS.validate_step*FLAGS.batch_size)==0):
+                    eval_loss, eval_acc = do_eval(sess, model, testX, testY, batch_size,vocabulary_index2word_label)
+                    print("transformer.classification.validation.part. previous_eval_loss:", previous_eval_loss,";current_eval_loss:",eval_loss)
                     if eval_loss > previous_eval_loss: #if loss is not decreasing
                         # reduce the learning rate by a factor of 0.5
-                        print("transformer==>validation.part.going to reduce the learning rate.")
+                        print("transformer.classification.==>validation.part.going to reduce the learning rate.")
                         learning_rate1 = sess.run(model.learning_rate)
                         lrr=sess.run([model.learning_rate_decay_half_op])
                         learning_rate2 = sess.run(model.learning_rate)
-                        print("transformer==>validation.part.learning_rate1:", learning_rate1, " ;learning_rate2:",learning_rate2)
+                        print("transformer.classification==>validation.part.learning_rate1:", learning_rate1, " ;learning_rate2:",learning_rate2)
                     #print("HierAtten==>Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch, eval_loss, eval_acc))
                     else:# loss is decreasing
                         if eval_loss<best_eval_loss:
-                            print("transformer==>going to save the model.eval_loss:",math.exp(eval_loss) if eval_loss<20 else 10000.000,";best_eval_loss:",math.exp(best_eval_loss) if best_eval_loss<20 else 10000.000)
+                            print("transformer.classification==>going to save the model.eval_loss:",eval_loss,";best_eval_loss:",best_eval_loss)
                             # save model to checkpoint
                             save_path = FLAGS.ckpt_dir + "model.ckpt"
                             saver.save(sess, save_path, global_step=epoch)
@@ -141,7 +134,7 @@ def main(_):
             sess.run(model.epoch_increment)
 
         # 5.最后在测试集上做测试，并报告测试准确率 Test
-        test_loss, test_acc = do_eval(sess, model, testX, testY, batch_size,vocabulary_index2word_label,eval_decoder_input=test_decoder_input)
+        test_loss, test_acc = do_eval(sess, model, testX, testY, batch_size,vocabulary_index2word_label)
     pass
 
 def assign_pretrained_word_embedding(sess,vocabulary_index2word,vocab_size,model,word2vec_model_path=None):
@@ -183,11 +176,11 @@ def do_eval(sess,model,evalX,evalY,batch_size,vocabulary_index2word_label,eval_d
     eval_loss,eval_acc,eval_counter=0.0,0.0,0
     for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
         feed_dict = {model.input_x: evalX[start:end], model.dropout_keep_prob: 1.0}
-        if not FLAGS.multi_label_flag:
-            feed_dict[model.input_y] = evalY[start:end]
-        else:
-            feed_dict[model.input_y_label] = evalY[start:end]
-            feed_dict[model.decoder_input] = eval_decoder_input[start:end]
+        #if not FLAGS.multi_label_flag:
+        #    feed_dict[model.input_y] = evalY[start:end]
+        #else:
+        feed_dict[model.input_y_label] = evalY[start:end]
+        #    feed_dict[model.decoder_input] = eval_decoder_input[start:end]
         curr_eval_loss, logits,curr_eval_acc,pred= sess.run([model.loss_val,model.logits,model.accuracy,model.predictions],feed_dict)#curr_eval_acc--->textCNN.accuracy
         eval_loss,eval_acc,eval_counter=eval_loss+curr_eval_loss,eval_acc+curr_eval_acc,eval_counter+1
         #if ii<20:

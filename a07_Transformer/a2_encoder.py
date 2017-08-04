@@ -11,7 +11,7 @@ import tensorflow as tf
 from a2_base_model import BaseClass
 import time
 class Encoder(BaseClass):
-    def __init__(self,d_model,d_k,d_v,sequence_length,h,batch_size,num_layer,Q,K_s,type='encoder',mask=None,dropout_keep_prob=None):
+    def __init__(self,d_model,d_k,d_v,sequence_length,h,batch_size,num_layer,Q,K_s,type='encoder',mask=None,dropout_keep_prob=None,use_residual_conn=True):
         """
         :param d_model:
         :param d_k:
@@ -28,6 +28,7 @@ class Encoder(BaseClass):
         self.mask=mask
         self.initializer = tf.random_normal_initializer(stddev=0.1)
         self.dropout_keep_prob=dropout_keep_prob
+        self.use_residual_conn=use_residual_conn
 
     def encoder_fn(self):
         start = time.time()
@@ -53,7 +54,7 @@ class Encoder(BaseClass):
         #1.1 the first is multi-head self-attention mechanism
         multi_head_attention_output=self.sub_layer_multi_head_attention(layer_index,Q,K_s,self.type,mask=self.mask,dropout_keep_prob=self.dropout_keep_prob) #[batch_size,sequence_length,d_model]
         #1.2 use LayerNorm(x+Sublayer(x)). all dimension=512.
-        multi_head_attention_output=self.sub_layer_layer_norm_residual_connection(K_s ,multi_head_attention_output,layer_index,'encoder_multi_head_attention',dropout_keep_prob=self.dropout_keep_prob)
+        multi_head_attention_output=self.sub_layer_layer_norm_residual_connection(K_s ,multi_head_attention_output,layer_index,'encoder_multi_head_attention',dropout_keep_prob=self.dropout_keep_prob,use_residual_conn=self.use_residual_conn)
 
         #2.1 the second is position-wise fully connected feed-forward network.
         postion_wise_feed_forward_output=self.sub_layer_postion_wise_feed_forward(multi_head_attention_output,layer_index,self.type)

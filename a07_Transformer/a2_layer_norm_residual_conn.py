@@ -4,17 +4,22 @@ import time
 We employ a residual connection around each of the two sub-layers, followed by layer normalization.
 That is, the output of each sub-layer is LayerNorm(x+ Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. """
 class LayerNormResidualConnection(object):
-    def __init__(self,x,y,layer_index,type,residual_dropout=0.1):
+    def __init__(self,x,y,layer_index,type,residual_dropout=0.1,use_residual_conn=True):
         self.x=x
         self.y=y
         self.layer_index=layer_index
         self.type=type
         self.residual_dropout=residual_dropout
+        self.use_residual_conn=use_residual_conn
 
     #call residual connection and layer normalization
     def layer_norm_residual_connection(self):
-        x_residual=self.residual_connection()
-        x_layer_norm=self.layer_normalization(x_residual)
+        print("LayerNormResidualConnection.use_residual_conn:",self.use_residual_conn)
+        ##if self.use_residual_conn:
+        #    x_residual=self.residual_connection()
+        #    x_layer_norm=self.layer_normalization(x_residual)
+        #else:
+        x_layer_norm = self.layer_normalization(self.x)
         return x_layer_norm
 
     def residual_connection(self):

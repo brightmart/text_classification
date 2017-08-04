@@ -61,7 +61,7 @@ class BaseClass(object):
             sub_layer_multi_head_attention_output = multi_head_attention_class.multi_head_attention_fn()  # [batch_size*sequence_length,d_model]
         return sub_layer_multi_head_attention_output  # [batch_size,sequence_length,d_model]
 
-    def sub_layer_layer_norm_residual_connection(self,layer_input ,layer_output,layer_index,type,dropout_keep_prob=None): # COMMON FUNCTION
+    def sub_layer_layer_norm_residual_connection(self,layer_input ,layer_output,layer_index,type,dropout_keep_prob=None,use_residual_conn=True): # COMMON FUNCTION
         """
         layer norm & residual connection
         :param input: [batch_size,equence_length,d_model]
@@ -71,6 +71,6 @@ class BaseClass(object):
         print("@@@========================>layer_input:",layer_input,";layer_output:",layer_output)
         #assert layer_input.get_shape().as_list()==layer_output.get_shape().as_list()
         #layer_output_new= layer_input+ layer_output
-        layer_norm_residual_conn=LayerNormResidualConnection(layer_input,layer_output,layer_index,type,residual_dropout=(1-dropout_keep_prob))
+        layer_norm_residual_conn=LayerNormResidualConnection(layer_input,layer_output,layer_index,type,residual_dropout=(1-dropout_keep_prob),use_residual_conn=use_residual_conn)
         output = layer_norm_residual_conn.layer_norm_residual_connection()
         return output  # [batch_size,sequence_length,d_model]
