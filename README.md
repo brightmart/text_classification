@@ -49,13 +49,17 @@ and other models:
 Performance
 -------------------------------------------------------------------------
 
-(mulit-label label prediction task,ask to prediction top5, 3 million training data,full mark:0.5)
+(mulit-label label prediction task,ask to prediction top5, 3 million training data,full score:0.5)
 
 Model   | fastText|TextCNN|TextRNN| RCNN | HierAtteNet|Seq2seqAttn|EntityNet|DynamicMemory|Transformer
 ---     | ---     | ---   | ---   |---   |---         |---        |---      |---          |----
 Score   | 0.362   |  0.405| 0.358 | 0.395| 0.398      |0.322      |0.400    |0.392        |0.322
 Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h           |7h
 --------------------------------------------------------------------------------------------------
+
+ Ensemble of TextCNN,EntityNet,DynamicMemory: 0.411
+ Ensemble EntityNet,DynamicMemory: 0.403
+ 
  Notice: 
  'm' stand for minutes; 'h' stand for hours.
 'HierAtteNet' means Hierarchical Attention Networkk;
