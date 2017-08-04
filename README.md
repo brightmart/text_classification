@@ -51,16 +51,17 @@ Performance
 
 (mulit-label label prediction task,ask to prediction top5, 3 million training data,full mark:0.5)
 
-Model   | fastText|TextCNN|TextRNN| RCNN | HierAtteNet|Seq2seqAttn|EntityNet|DynamicMemory
----     | ---     | ---   | ---   |---   |---         |---        |---      |---
-Score   | 0.362   |  0.405| 0.358 | 0.395| 0.398      |0.322      |0.400    |0.392
-Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h
--------------------------------------------------------------------------------------------
+Model   | fastText|TextCNN|TextRNN| RCNN | HierAtteNet|Seq2seqAttn|EntityNet|DynamicMemory|Transformer
+---     | ---     | ---   | ---   |---   |---         |---        |---      |---          |----
+Score   | 0.362   |  0.405| 0.358 | 0.395| 0.398      |0.322      |0.400    |0.392        |0.322
+Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h           |7h
+--------------------------------------------------------------------------------------------------
  Notice: 
  'm' stand for minutes; 'h' stand for hours.
 'HierAtteNet' means Hierarchical Attention Networkk;
 'Seq2seqAttn' means Seq2seq with attention;
 'DynamicMemory' means DynamicMemoryNetwork;
+'Transformer' stand for model from 'Attention Is All You Need'.
 
 Useage:
 -------------------------------------------------------------------------------------------------------
@@ -251,7 +252,8 @@ V.Notices:
 
 10.Transformer("Attention Is All You Need")
 -------------
-Status: Just finish main part, and able to generate reverse order of its sequences in toy task. you can check it by running test function in the model. however, i was not able to get useful result in real task yet.
+Status: it was able to do task classification. and able to generate reverse order of its sequences in toy task. you can check it by running test function in the model. check: a2_train_classification.py(train) or a2_transformer_classification.py(model)
+
 we do it in parallell style.layer normalization,residual connection, and mask are also used in the model. 
 
 For every building blocks, we include a test function in the each file below, and we've test each small piece successfully.
@@ -282,7 +284,11 @@ Main Take away from this model:
 
 1) multi-head self attention: use self attention, linear transform multi-times to get projection of key-values, then do ordinary attention; 2) some tricks to improve performance(residual connection,position encoding, poistion feed forward, label smooth, mask to ignore things we want to ignore).
 
-for detail of the model, please check: a2_transformer.py
+Use this model to do task classification:
+
+Here we only use encode part for task classification, removed resdiual connection, used only 1 layer.no need to use mask.
+
+for detail of the model, please check: a2_transformer_classification.py
 
 -------------------------------------------------------------------------
 
