@@ -60,6 +60,7 @@ Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h 
  Ensemble of TextCNN,EntityNet,DynamicMemory: 0.411
  
  Ensemble EntityNet,DynamicMemory: 0.403
+ 
  --------------------------------------------------------------------------------------------------
  
  Notice: 
