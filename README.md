@@ -286,7 +286,7 @@ Main Take away from this model:
 
 Use this model to do task classification:
 
-Here we only use encode part for task classification, removed resdiual connection, used only 1 layer.no need to use mask.
+Here we only use encode part for task classification, removed resdiual connection, used only 1 layer.no need to use mask. we use multi-head attention and postionwise feed forward to extract features of input sentence, then use linear layer to project it to get logits.
 
 for detail of the model, please check: a2_transformer_classification.py
 
