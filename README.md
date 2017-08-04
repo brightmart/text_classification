@@ -58,13 +58,19 @@ Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h 
 --------------------------------------------------------------------------------------------------
 
  Ensemble of TextCNN,EntityNet,DynamicMemory: 0.411
+ 
  Ensemble EntityNet,DynamicMemory: 0.403
  
  Notice: 
- 'm' stand for minutes; 'h' stand for hours.
+ 
+ 'm' stand for minutes; 'h' stand for hours;
+ 
 'HierAtteNet' means Hierarchical Attention Networkk;
+
 'Seq2seqAttn' means Seq2seq with attention;
+
 'DynamicMemory' means DynamicMemoryNetwork;
+
 'Transformer' stand for model from 'Attention Is All You Need'.
 
 Useage:
