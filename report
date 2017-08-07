@@ -1,5 +1,7 @@
 Large Scale Multi-label Text Classification With Deep Learning
 
+Status: THIS IS DRAFT, WE ARE WORKING ON IT.THE TARGET IS TO WRITE A REPORT WITH PAPER STRCTURE, REACH LEVEL OF CLOSE TO PROJECT REPORT OF CS224N.
+
 Abstract
 Multi-label text classification is a more complex problem than single label text classification. Labels may have some internal relationship or hierarchical structure between each other.
 We investigate serveral neural networks for multi-label classification. Our baseline is fastText, a very simple model with n-gram features. 
