@@ -2,9 +2,6 @@ Text Classification
 -------------------------------------------------------------------------
 the purpose of this repository is to explore text classification methods in NLP with deep learning. 
 
-for the formal report, please check:
-https://github.com/brightmart/text_classification/blob/master/mulit-label-classification.pdf
-
 it has all kinds of baseline models for text classificaiton.
 
 it also support for multi-label classification where multi label associate with an sentence or document.
@@ -12,6 +9,8 @@ it also support for multi-label classification where multi label associate with 
 although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
 
 each model has a test function under model class. you can run it to performance toy task first. the model is indenpendent from dataset.
+
+<a href='https://github.com/brightmart/text_classification/blob/master/mulit-label-classification.pdf'>check here for formal report of large scale multi-label text classification with deep learning</a>
 
 serveral modes here can also be used for modelling question answering (with or without context), or to do sequences generating. 
 
