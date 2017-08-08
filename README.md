@@ -221,6 +221,25 @@ Structure:
 
 5) FC+Softmax
 
+In NLP, text classification can be done for single sentence, but it can also be used for multiple sentences. we may call it document classification. Words are form to sentence. And sentence are form to document. In this circumstance, there may exists a intrinsic structure. So how can we model this kinds of task? Does all parts of document are equally relevant? And how we determine which part are more important than another?
+
+It has two unique features: 
+
+1)it has a hierarchical structure that reflect the hierarchical structure of documents; 
+
+2)it has two levels of attention mechanisms used at the word and sentence-level. it enable the model to capture important information in different levels.
+
+Word Encoder:
+For each words in a sentence, it is embedded into word vector in distribution vector space. It use a bidirectional GRU to encode the sentence. By concatenate vector from two direction, it now can form a representation of the sentence, which also capture contextual information.
+
+Word Attention:
+Same words are more important than another for the sentence. So attention mechanism is used. It first use one layer MLP to get uit hidden representation of the sentence, then measure the importance of the word as the similarity of uit with a word level context vector uw and get a normalized importance through a softmax function. 
+
+Sentence Encoder: 
+for sentence vectors, bidirectional GRU is used to encode it. Similarly to word encoder.
+
+Sentence Attention: 
+sentence level vector is used to measure importance among sentences. Similarly to word attention.
 
 Input of data: 
 
