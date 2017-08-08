@@ -2,6 +2,9 @@ Text Classification
 -------------------------------------------------------------------------
 the purpose of this repository is to explore text classification methods in NLP with deep learning. 
 
+for the formal report, please check:
+https://github.com/brightmart/text_classification/blob/master/mulit-label-classification.pdf
+
 it has all kinds of baseline models for text classificaiton.
 
 it also support for multi-label classification where multi label associate with an sentence or document.
