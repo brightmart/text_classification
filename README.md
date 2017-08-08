@@ -209,7 +209,7 @@ Implementation of <a href="https://www.cs.cmu.edu/~diyiy/docs/naacl16.pdf">Hiera
 
 Structure:
 
-1)embedding 
+1) embedding 
 
 2) Word Encoder: word level bi-directional GRU to get rich representation of words
 
