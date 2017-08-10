@@ -10,7 +10,7 @@ although many of these models are simple, and may not get you to top level of th
 
 each model has a test function under model class. you can run it to performance toy task first. the model is indenpendent from dataset.
 
-<a href='https://github.com/brightmart/text_classification/blob/master/mulit-label-classification.pdf'>check here for formal report of large scale multi-label text classification with deep learning</a>
+<a href='https://github.com/brightmart/text_classification/blob/master/multi-label-classification.pdf'>check here for formal report of large scale multi-label text classification with deep learning</a>
 
 serveral modes here can also be used for modelling question answering (with or without context), or to do sequences generating. 
 
