@@ -110,5 +110,5 @@ def test():
             loss,acc,predict,_=sess.run([fastText.loss_val,fastText.accuracy,fastText.predictions,fastText.train_op],
                                         feed_dict={fastText.sentence:input_x,fastText.labels:input_y})
             print("loss:",loss,"acc:",acc,"label:",input_y,"prediction:",predict)
-test()
+#test()
 print("ended...")
