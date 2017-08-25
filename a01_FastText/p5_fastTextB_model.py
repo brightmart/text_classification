@@ -1,4 +1,5 @@
 # fast text. using: very simple model;n-gram to captrue location information;h-softmax to speed up training/inference
+# for the n-gram you can use data_util to generate. see method process_one_sentence_to_get_ui_bi_tri_gram under aa1_data_util/data_util_zhihu.py
 print("started...")
 import tensorflow as tf
 import numpy as np
