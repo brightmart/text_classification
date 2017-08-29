@@ -56,7 +56,7 @@ class TextRNN:
         lstm_bw_cell=rnn.BasicLSTMCell(self.hidden_size) #backward direction cell
         if self.dropout_keep_prob is not None:
             lstm_fw_cell=rnn.DropoutWrapper(lstm_fw_cell,output_keep_prob=self.dropout_keep_prob)
-            lstm_bw_cell==rnn.DropoutWrapper(lstm_bw_cell,output_keep_prob=self.dropout_keep_prob)
+            lstm_bw_cell=rnn.DropoutWrapper(lstm_bw_cell,output_keep_prob=self.dropout_keep_prob)
         # bidirectional_dynamic_rnn: input: [batch_size, max_time, input_size]
         #                            output: A tuple (outputs, output_states)
         #                                    where:outputs: A tuple (output_fw, output_bw) containing the forward and the backward rnn output `Tensor`.
