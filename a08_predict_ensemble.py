@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#prediction using model.
+#prediction using multi-models. take out: create multiple graphs. each graph associate with a session. add logits of models.
 #process--->1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.predict
 import sys
 reload(sys)
