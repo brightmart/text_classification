@@ -39,7 +39,7 @@ Models:
 8) Dynamic Memory Network
 9) EntityNetwork:tracking state of the world
 10) Ensemble models
-11) Stacking in single model label layer (TODO): 
+11) Stacking for single model level (TODO): 
 
     for a single model, stack identical models together. each layer is a model. the result will be based on logits added together. the only connection between layers are label's weights. the front layer's prediction error rate of each label will become weight for the next layers. those labels with high error rate will have big weight. so later layer's will pay more attention to those mis-predicted labels, and try to fix previous mistake of former layer. as a result, we will get a much strong model.
 
