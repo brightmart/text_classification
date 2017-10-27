@@ -432,9 +432,9 @@ TODO
 
 5.Ensemble Models
 
--------------------------------------------------------------------------
-Conclusion:
 
+Conclusion:
+-------------------------------------------------------------------------
 During the process of doing large scale of multi-label classification, serveral lessons has been learned, and some list as below:
 
 1) What is most important thing to reach a high accuracy? 
