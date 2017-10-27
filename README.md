@@ -433,7 +433,22 @@ TODO
 5.Ensemble Models
 
 -------------------------------------------------------------------------
+Conclusion:
 
+During the process of doing large scale of multi-label classification, serveral lessons has been learned, and some list as below:
+
+1) What is most important thing to reach a high accuracy? 
+It depend the task you are doing. From the task we conducted here, we believe that ensemble models based on models trained from multiple features including word, character for title and description can help to reach very high accuarcy; However, in some cases,as just alphaGo Zero demonstrated, algorithm is more important then data or computational power, in fact alphaGo Zero did not use any humam data. 
+
+2) Is there a ceiling for any specific model or algorithm?
+The answer is yes. lots of different models were used here, we found many models have similiar performances, even though there are quite different in structure. In some extent, the difference of performance is not so big.
+
+3) Is case study of error useful?
+I think it is quite useful especially when you have done many different things, but reached a limit. For example, by doing case study, you can find labels that models can make correct prediction, and where they make mistakes. And to imporove performance by  increasing weights of these wrong predicted labels or finding potential errors from data.
+
+4) How can we become expert in a specific of Machine Learning?
+In my opinion,join a machine learning competation or begin a task with lots of data, then read papers and implement some, is a good starting point. So we will have some really experience and ideas of handling specific task, and know the challenges of it.
+But what's more important is that we should not only follow ideas from papers, but to explore some new ideas we think may help to slove the problem. For example, by changing structures of classic models or even invent some new structures, we may able to tackle the problem in a much better way as it may more suitable for task we are doing.
 
 Reference:
 -------------------------------------------------------------------------------------------------------
