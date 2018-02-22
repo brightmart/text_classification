@@ -70,21 +70,21 @@ Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h 
  
  Notice: 
  
- 'm' stand for minutes; 'h' stand for hours;
+ `m` stand for **minutes**; `h` stand for **hours**;
  
-'HierAtteNet' means Hierarchical Attention Networkk;
+`HierAtteNet` means Hierarchical Attention Networkk;
 
-'Seq2seqAttn' means Seq2seq with attention;
+`Seq2seqAttn` means Seq2seq with attention;
 
-'DynamicMemory' means DynamicMemoryNetwork;
+`DynamicMemory` means DynamicMemoryNetwork;
 
-'Transformer' stand for model from 'Attention Is All You Need'.
+`Transformer` stand for model from 'Attention Is All You Need'.
 
 Useage:
 -------------------------------------------------------------------------------------------------------
-1) model is in xxx_model.py
-2) run python xxx_train.py to train the model
-3) run python xxx_predict.py to do inference(test).
+1) model is in `xxx_model.py`
+2) run python `xxx_train.py` to train the model
+3) run python `xxx_predict.py` to do inference(test).
 
 Each model has a test method under the model class. you can run the test method first to check whether the model can work properly.
 
