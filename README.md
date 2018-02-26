@@ -144,6 +144,8 @@ Thirdly, we will concatenate scalars to form final features. It is a fixed-size 
 
 Finally, we will use linear layer to project these features to per-defined labels.
 
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/TextCNN.JPG)
+
 -------------------------------------------------------------------------
 
 
