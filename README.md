@@ -121,6 +121,7 @@ result: performance is as good as paper, speed also very fast.
 
 check: p5_fastTextB_model.py
 
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/fastText.JPG)
 -------------------------------------------------------------------------
 
 2.TextCNN:
