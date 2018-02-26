@@ -155,7 +155,7 @@ Structure:embedding--->bi-directional lstm--->concat output--->average----->soft
 
 check: p8_TextRNN_model.py
 
-
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/bi-directionalRNN.JPG)
 -------------------------------------------------------------------------
 
 
@@ -210,6 +210,7 @@ for left side context, it use a recurrent structure, a no-linearity transfrom of
 
 check: p71_TextRCNN_model.py
 
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/RCNN.JPG)
 
 -------------------------------------------------------------------------
 
@@ -230,6 +231,8 @@ Structure:
 5) Sentence Attetion: sentence level attention to get important sentence among sentences
 
 5) FC+Softmax
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/HAN.JPG)
 
 In NLP, text classification can be done for single sentence, but it can also be used for multiple sentences. we may call it document classification. Words are form to sentence. And sentence are form to document. In this circumstance, there may exists a intrinsic structure. So how can we model this kinds of task? Does all parts of document are equally relevant? And how we determine which part are more important than another?
 
@@ -259,6 +262,7 @@ In my training data, for each example, i have four parts. each part has same len
 
 check:p1_HierarchicalAttention_model.py
 
+
 -------------------------------------------------------------------------
 
 9.Seq2seq with attention
@@ -268,6 +272,8 @@ Implementation seq2seq with attention derived from <a href="https://arxiv.org/pd
 I.Structure:
 
 1)embedding 2)bi-GRU too get rich representation from source sentences(forward & backward). 3)decoder with attention.
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/seq2seqAttention.JPG)
 
 II.Input of data:
 
@@ -312,6 +318,8 @@ we do it in parallell style.layer normalization,residual connection, and mask ar
 For every building blocks, we include a test function in the each file below, and we've test each small piece successfully.
 
 Sequence to sequence with attention is a typical model to solve sequence generation problem, such as translate, dialogue system. most of time, it use RNN as buidling block to do these tasks. util recently, people also apply convolutional Neural Network for sequence to sequence problem. Transformer, however, it perform these tasks solely on attention mechansim. it is fast and acheive new state-of-art result.
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/attention_is_all_you_need.JPG)
 
 It also has two main parts: encoder and decoder. below is desc from paper:
 
@@ -370,6 +378,8 @@ b. get weighted sum of hidden state using possibility distribution.
 
 c. non-linearity transform of query and hidden state to get predict label.
 
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/EntityNet.JPG)
+
 Main take away from this model:
 
 1) use blocks of keys and values, which is independent from each other. so it can be run in parallel.
@@ -395,6 +405,8 @@ Outlook of Model:
 3.Episodic Memory Module: with inputs,it chooses which parts of inputs to focus on through the attention mechanism, taking into account of question and previous memory====>it poduce a 'memory' vecotr.
 
 4.Answer Module:generate an answer from the final memory vector.
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/DMN.JPG)
 
 Detail:
 
