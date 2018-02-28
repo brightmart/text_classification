@@ -97,7 +97,7 @@ Environment:
 -------------------------------------------------------------------------------------------------------
 python 2.7+ tensorflow 1.1
 
-(tensorflow 1.2 also works; most of models should also work fine in other tensorflow version, since we use very few features bond to certain version; if you use python 3.5, it will be fine as long as you change print/try catch function)
+(tensorflow 1.2,1.3,1.4 also works; most of models should also work fine in other tensorflow version, since we use very few features bond to certain version; if you use python 3.5, it will be fine as long as you change print/try catch function)
 
 -------------------------------------------------------------------------
 
