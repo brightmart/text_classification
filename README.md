@@ -152,11 +152,19 @@ Finally, we will use linear layer to project these features to per-defined label
 
 3.TextRNN
 -------------
-Structure:embedding--->bi-directional lstm--->concat output--->average----->softmax
+Structure v1:embedding--->bi-directional lstm--->concat output--->average----->softmax layer
 
 check: p8_TextRNN_model.py
 
 ![alt text](https://github.com/brightmart/text_classification/blob/master/images/bi-directionalRNN.JPG)
+
+Structure v2:embedding-->bi-directional lstm---->dropout-->concat ouput--->lstm--->droput-->FC layer-->softmax layer
+
+check: p8_TextRNN_model_multilayer.py
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/emojifier-v2.png)
+
+
 -------------------------------------------------------------------------
 
 
