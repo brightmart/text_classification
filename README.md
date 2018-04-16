@@ -1,6 +1,8 @@
 Text Classification
 -------------------------------------------------------------------------
-the purpose of this repository is to explore text classification methods in NLP with deep learning. 
+the purpose of this repository is to explore text classification methods in NLP with deep learning.
+
+UPDATE: if you want to try a model now, you can go to folder 'a02_TextCNN', run 'python -u p7_TextCNN_train.py', it will use sample data to train a model, and print loss and F1 score periodically.
 
 it has all kinds of baseline models for text classificaiton.
 
@@ -98,6 +100,8 @@ Environment:
 python 2.7+ tensorflow 1.1
 
 (tensorflow 1.2,1.3,1.4 also works; most of models should also work fine in other tensorflow version, since we use very few features bond to certain version; if you use python 3.5, it will be fine as long as you change print/try catch function)
+
+TextCNN model is already transfomed to python 3.6
 
 -------------------------------------------------------------------------
 
