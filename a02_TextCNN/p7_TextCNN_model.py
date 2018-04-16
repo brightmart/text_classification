@@ -26,7 +26,7 @@ class TextCNN:
 
         # add placeholder (X,label)
         self.input_x = tf.placeholder(tf.int32, [None, self.sequence_length], name="input_x")  # X
-        self.input_y = tf.placeholder(tf.int32, [None,],name="input_y")  # y:[None,num_classes]
+        #self.input_y = tf.placeholder(tf.int32, [None,],name="input_y")  # y:[None,num_classes]
         self.input_y_multilabel = tf.placeholder(tf.float32,[None,self.num_classes], name="input_y_multilabel")  # y:[None,num_classes]. this is for multi-label classification only.
         self.dropout_keep_prob=tf.placeholder(tf.float32,name="dropout_keep_prob")
 
@@ -39,20 +39,14 @@ class TextCNN:
         self.logits = self.inference() #[None, self.label_size]. main computation graph is here.
         if not is_training:
             return
-        if multi_label_flag:
-            print("going to use multi label loss.")
-            self.loss_val = self.loss_multilabel()
-        else:
-            print("going to use single label loss.")
-            self.loss_val = self.loss()
+        if multi_label_flag:print("going to use multi label loss.");self.loss_val = self.loss_multilabel()
+        else:print("going to use single label loss.");self.loss_val = self.loss()
         self.train_op = self.train()
         self.predictions = tf.argmax(self.logits, 1, name="predictions")  # shape:[None,]
-
+        print("self.predictions:",self.predictions)
         if not self.multi_label_flag:
             correct_prediction = tf.equal(tf.cast(self.predictions,tf.int32), self.input_y) #tf.argmax(self.logits, 1)-->[batch_size]
             self.accuracy =tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="Accuracy") # shape=()
-        else:
-            self.accuracy = tf.constant(0.5) #fuke accuracy. (you can calcuate accuracy outside of graph using method calculate_accuracy(...) in train.py)
 
     def instantiate_weights(self):
         """define all weights here"""
@@ -62,7 +56,7 @@ class TextCNN:
             self.b_projection = tf.get_variable("b_projection",shape=[self.num_classes])       #[label_size] #ADD 2017.06.09
 
     def inference(self):
-        """main computation graph here: 1.embedding-->2.average-->3.linear classifier"""
+        """main computation graph here: 1.embedding-->2.CONV-RELU-MAX_POOLING-->3.linear classifier"""
         # 1.=====>get emebedding of words in the sentence
         self.embedded_words = tf.nn.embedding_lookup(self.Embedding,self.input_x)#[None,sentence_length,embed_size]
         self.sentence_embeddings_expanded=tf.expand_dims(self.embedded_words,-1) #[None,sentence_length,embed_size,1). expand dimension so meet input requirement of 2d-conv
@@ -105,18 +99,7 @@ class TextCNN:
             logits = tf.matmul(self.h_drop,self.W_projection) + self.b_projection  #shape:[None, self.num_classes]==tf.matmul([None,self.embed_size],[self.embed_size,self.num_classes])
         return logits
 
-    def loss(self,l2_lambda=0.0001):#0.001
-        with tf.name_scope("loss"):
-            #input: `logits`:[batch_size, num_classes], and `labels`:[batch_size]
-            #output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
-            losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_y, logits=self.logits);#sigmoid_cross_entropy_with_logits.#losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input_y,logits=self.logits)
-            #print("1.sparse_softmax_cross_entropy_with_logits.losses:",losses) # shape=(?,)
-            loss=tf.reduce_mean(losses)#print("2.loss.loss:", loss) #shape=()
-            l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * l2_lambda
-            loss=loss+l2_losses
-        return loss
-
-    def loss_multilabel(self,l2_lambda=0.00001): #0.0001#this loss function is for multi-label classification
+    def loss_multilabel(self,l2_lambda=0.0001): #0.0001#this loss function is for multi-label classification
         with tf.name_scope("loss"):
             #input: `logits` and `labels` must have the same shape `[batch_size, num_classes]`
             #output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
@@ -127,6 +110,17 @@ class TextCNN:
             print("sigmoid_cross_entropy_with_logits.losses:",losses) #shape=(?, 1999).
             losses=tf.reduce_sum(losses,axis=1) #shape=(?,). loss for all data in the batch
             loss=tf.reduce_mean(losses)         #shape=().   average loss in the batch
+            l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * l2_lambda
+            loss=loss+l2_losses
+        return loss
+
+    def loss(self,l2_lambda=0.0001):#0.001
+        with tf.name_scope("loss"):
+            #input: `logits`:[batch_size, num_classes], and `labels`:[batch_size]
+            #output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
+            losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_y, logits=self.logits);#sigmoid_cross_entropy_with_logits.#losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input_y,logits=self.logits)
+            #print("1.sparse_softmax_cross_entropy_with_logits.losses:",losses) # shape=(?,)
+            loss=tf.reduce_mean(losses)#print("2.loss.loss:", loss) #shape=()
             l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * l2_lambda
             loss=loss+l2_losses
         return loss

@@ -1,74 +1,60 @@
 # -*- coding: utf-8 -*-
 #training the model.
 #process--->1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+#import sys
+#reload(sys)
+#sys.setdefaultencoding('utf8')
 import tensorflow as tf
 import numpy as np
 from p7_TextCNN_model import TextCNN
-from data_util_zhihu import load_data_multilabel_new,create_voabulary,create_voabulary_label
-from tflearn.data_utils import to_categorical, pad_sequences
+from data_util import create_vocabulary,load_data_multilabel
 import os
 import word2vec
-import pickle
 
 #configuration
 FLAGS=tf.app.flags.FLAGS
-tf.app.flags.DEFINE_integer("num_classes",1999,"number of label")
-tf.app.flags.DEFINE_float("learning_rate",0.01,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 512, "Batch size for training/evaluating.") #批处理的大小 32-->128
-tf.app.flags.DEFINE_integer("decay_steps", 6000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
+
+tf.app.flags.DEFINE_string("traning_data_path","../data/sample_multiple_label.txt","path of traning data.")
+tf.app.flags.DEFINE_integer("vocab_size",50000,"maximum vocab size.")
+
+tf.app.flags.DEFINE_float("learning_rate",0.0001,"learning rate")
+tf.app.flags.DEFINE_integer("batch_size", 16, "Batch size for training/evaluating.") #批处理的大小 32-->128
+tf.app.flags.DEFINE_integer("decay_steps", 1000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
 tf.app.flags.DEFINE_float("decay_rate", 0.65, "Rate of decay for learning rate.") #0.65一次衰减多少
-#tf.app.flags.DEFINE_integer("num_sampled",50,"number of noise sampling") #100
 tf.app.flags.DEFINE_string("ckpt_dir","text_cnn_title_desc_checkpoint/","checkpoint location for the model")
 tf.app.flags.DEFINE_integer("sentence_len",100,"max sentence length")
 tf.app.flags.DEFINE_integer("embed_size",100,"embedding size")
 tf.app.flags.DEFINE_boolean("is_training",True,"is traning.true:tranining,false:testing/inference")
-tf.app.flags.DEFINE_integer("num_epochs",17,"number of epochs to run.")
+tf.app.flags.DEFINE_integer("num_epochs",10,"number of epochs to run.")
 tf.app.flags.DEFINE_integer("validate_every", 1, "Validate every validate_every epochs.") #每10轮做一次验证
-tf.app.flags.DEFINE_boolean("use_embedding",True,"whether to use embedding or not.")
-#tf.app.flags.DEFINE_string("cache_path","text_cnn_checkpoint/data_cache.pik","checkpoint location for the model")
-#train-zhihu4-only-title-all.txt
-tf.app.flags.DEFINE_string("traning_data_path","train-zhihu4-only-title-all.txt","path of traning data.") #O.K.train-zhihu4-only-title-all.txt-->training-data/test-zhihu4-only-title.txt--->'training-data/train-zhihu5-only-title-multilabel.txt'
-tf.app.flags.DEFINE_integer("num_filters", 256, "number of filters") #256--->512
-tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec-title-desc.bin-100","word2vec's vocabulary and vectors") #zhihu-word2vec.bin-100-->zhihu-word2vec-multilabel-minicount15.bin-100
+tf.app.flags.DEFINE_boolean("use_embedding",False,"whether to use embedding or not.")
+tf.app.flags.DEFINE_integer("num_filters", 32, "number of filters") #256--->512
+tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec-title-desc.bin-100","word2vec's vocabulary and vectors")
+tf.app.flags.DEFINE_string("name_scope","cnn","name scope value.")
 tf.app.flags.DEFINE_boolean("multi_label_flag",True,"use multi label or single label.")
-filter_sizes=[1,2,3,4,5,6,7] #[1,2,3,4,5,6,7]
+filter_sizes=[1,2,3,4,5,6,7]
+
 #1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
 def main(_):
-    #1.load data(X:list of lint,y:int).
-    #if os.path.exists(FLAGS.cache_path):  # 如果文件系统中存在，那么加载故事（词汇表索引化的）
-    #    with open(FLAGS.cache_path, 'r') as data_f:
-    #        trainX, trainY, testX, testY, vocabulary_index2word=pickle.load(data_f)
-    #        vocab_size=len(vocabulary_index2word)
-    #else:
-    if 1==1:
-        trainX, trainY, testX, testY = None, None, None, None
-        vocabulary_word2index, vocabulary_index2word = create_voabulary(word2vec_model_path=FLAGS.word2vec_model_path,name_scope="cnn2") #simple='simple'
-        vocab_size = len(vocabulary_word2index)
-        print("cnn_model.vocab_size:",vocab_size)
-        vocabulary_word2index_label,vocabulary_index2word_label = create_voabulary_label(name_scope="cnn2")
-        if FLAGS.multi_label_flag:
-            FLAGS.traning_data_path='training-data/train-zhihu6-title-desc.txt' #test-zhihu5-only-title-multilabel.txt
-        train, test, _ = load_data_multilabel_new(vocabulary_word2index, vocabulary_word2index_label,multi_label_flag=FLAGS.multi_label_flag,traning_data_path=FLAGS.traning_data_path) #,traning_data_path=FLAGS.traning_data_path
-        trainX, trainY = train
-        testX, testY = test
-        # 2.Data preprocessing.Sequence padding
-        print("start padding & transform to one hot...")
-        trainX = pad_sequences(trainX, maxlen=FLAGS.sentence_len, value=0.)  # padding to max length
-        testX = pad_sequences(testX, maxlen=FLAGS.sentence_len, value=0.)  # padding to max length
-        #with open(FLAGS.cache_path, 'w') as data_f: #save data to cache file, so we can use it next time quickly.
-        #    pickle.dump((trainX,trainY,testX,testY,vocabulary_index2word),data_f)
-        print("trainX[0]:", trainX[0]) #;print("trainY[0]:", trainY[0])
-        # Converting labels to binary vectors
-        print("end padding & transform to one hot...")
+    trainX, trainY, testX, testY = None, None, None, None
+    vocabulary_word2index, vocabulary_index2word, vocabulary_label2index, vocabulary_index2label= create_vocabulary(FLAGS.traning_data_path,FLAGS.vocab_size,name_scope=FLAGS.name_scope)
+    vocab_size = len(vocabulary_word2index);print("cnn_model.vocab_size:",vocab_size);num_classes=len(vocabulary_index2label)
+    train, test= load_data_multilabel(FLAGS.traning_data_path,vocabulary_word2index, vocabulary_label2index,FLAGS.sentence_len)
+    trainX, trainY = train
+    testX, testY = test
+    #print some message for debug purpose
+    print("length of training data:",len(trainX),";length of validation data:",len(testX))
+    print("trainX[0]:", trainX[0]);
+    print("trainY[0]:", trainY[0])
+    train_y_short = get_target_label_short(trainY[0])
+    print("train_y_short:", train_y_short)
+
     #2.create session.
     config=tf.ConfigProto()
     config.gpu_options.allow_growth=True
     with tf.Session(config=config) as sess:
         #Instantiate Model
-        textCNN=TextCNN(filter_sizes,FLAGS.num_filters,FLAGS.num_classes, FLAGS.learning_rate, FLAGS.batch_size, FLAGS.decay_steps,
+        textCNN=TextCNN(filter_sizes,FLAGS.num_filters,num_classes, FLAGS.learning_rate, FLAGS.batch_size, FLAGS.decay_steps,
                         FLAGS.decay_rate,FLAGS.sentence_len,vocab_size,FLAGS.embed_size,FLAGS.is_training,multi_label_flag=FLAGS.multi_label_flag)
         #Initialize Save
         saver=tf.train.Saver()
@@ -79,25 +65,25 @@ def main(_):
             print('Initializing Variables')
             sess.run(tf.global_variables_initializer())
             if FLAGS.use_embedding: #load pre-trained word embedding
-                assign_pretrained_word_embedding(sess, vocabulary_index2word, vocab_size, textCNN,word2vec_model_path=FLAGS.word2vec_model_path)
+                assign_pretrained_word_embedding(sess, vocabulary_index2word, vocab_size, textCNN,FLAGS.word2vec_model_path)
         curr_epoch=sess.run(textCNN.epoch_step)
         #3.feed data & training
         number_of_training_data=len(trainX)
         batch_size=FLAGS.batch_size
         for epoch in range(curr_epoch,FLAGS.num_epochs):
-            loss, acc, counter = 0.0, 0.0, 0
+            loss, counter =  0.0, 0
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
                 if epoch==0 and counter==0:
-                    print("trainX[start:end]:",trainX[start:end])#;print("trainY[start:end]:",trainY[start:end])
+                    print("trainX[start:end]:",trainX[start:end])
                 feed_dict = {textCNN.input_x: trainX[start:end],textCNN.dropout_keep_prob: 0.5}
                 if not FLAGS.multi_label_flag:
                     feed_dict[textCNN.input_y] = trainY[start:end]
                 else:
                     feed_dict[textCNN.input_y_multilabel]=trainY[start:end]
-                curr_loss,curr_acc,_=sess.run([textCNN.loss_val,textCNN.accuracy,textCNN.train_op],feed_dict) #curr_acc--->TextCNN.accuracy
-                loss,counter,acc=loss+curr_loss,counter+1,acc+curr_acc
+                curr_loss,lr,_=sess.run([textCNN.loss_val,textCNN.learning_rate,textCNN.train_op],feed_dict)
+                loss,counter=loss+curr_loss,counter+1
                 if counter %50==0:
-                    print("Epoch %d\tBatch %d\tTrain Loss:%.3f\tTrain Accuracy:%.3f" %(epoch,counter,loss/float(counter),acc/float(counter))) #tTrain Accuracy:%.3f---》acc/float(counter)
+                    print("Epoch %d\tBatch %d\tTrain Loss:%.3f\tLearning rate:%.5f" %(epoch,counter,loss/float(counter),lr))
 
             #epoch increment
             print("going to increment epoch counter....")
@@ -106,19 +92,85 @@ def main(_):
             # 4.validation
             print(epoch,FLAGS.validate_every,(epoch % FLAGS.validate_every==0))
             if epoch % FLAGS.validate_every==0:
-                eval_loss, eval_acc=do_eval(sess,textCNN,testX,testY,batch_size,vocabulary_index2word_label)
-                print("Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch,eval_loss,eval_acc))
+                eval_loss,f1_score,precision,recall=do_eval(sess,textCNN,testX,testY)
+                print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tPrecision:%.3f\tRecall:%.3f" % (epoch,eval_loss,f1_score,precision,recall))
                 #save model to checkpoint
                 save_path=FLAGS.ckpt_dir+"model.ckpt"
                 saver.save(sess,save_path,global_step=epoch)
 
         # 5.最后在测试集上做测试，并报告测试准确率 Test
-        test_loss, test_acc = do_eval(sess, textCNN, testX, testY, batch_size,vocabulary_index2word_label)
+        test_loss,_,_,_ = do_eval(sess, textCNN, testX, testY)
+        print("Test Loss:%.3f" % ( test_loss))
     pass
 
-def assign_pretrained_word_embedding(sess,vocabulary_index2word,vocab_size,textCNN,word2vec_model_path=None):
+
+# 在验证集上做验证，报告损失、精确度
+def do_eval(sess,textCNN,evalX,evalY):
+    number_examples=len(evalX)
+    eval_loss,eval_counter,eval_f1_score,eval_p,eval_r=0.0,0,0.0,0.0,0.0
+    batch_size=1
+    for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
+        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.input_y_multilabel:evalY[start:end],textCNN.dropout_keep_prob: 1.0}
+        curr_eval_loss, logits= sess.run([textCNN.loss_val,textCNN.logits],feed_dict)#curr_eval_acc--->textCNN.accuracy
+        label_list_top5 = get_label_using_logits(logits[0])
+        f1_score,p,r=compute_f1_score(list(label_list_top5), evalY[start:end][0])
+        eval_loss,eval_counter,eval_f1_score,eval_p,eval_r=eval_loss+curr_eval_loss,eval_counter+1,eval_f1_score+f1_score,eval_p+p,eval_r+r
+    return eval_loss/float(eval_counter),eval_f1_score/float(eval_counter),eval_p/float(eval_counter),eval_r/float(eval_counter)
+
+def compute_f1_score(label_list_top5,eval_y):
+    """
+    compoute f1_score.
+    :param logits: [batch_size,label_size]
+    :param evalY: [batch_size,label_size]
+    :return:
+    """
+    num_correct_label=0
+    eval_y_short=get_target_label_short(eval_y)
+    for label_predict in label_list_top5:
+        if label_predict in eval_y_short:
+            num_correct_label=num_correct_label+1
+    #P@5=Precision@5
+    num_labels_predicted=len(label_list_top5)
+    all_real_labels=len(eval_y_short)
+    p_5=num_correct_label/num_labels_predicted
+    #R@5=Recall@5
+    r_5=num_correct_label/all_real_labels
+    f1_score=2.0*p_5*r_5/(p_5+r_5+0.000001)
+    return f1_score,p_5,r_5
+
+def get_target_label_short(eval_y):
+    eval_y_short=[] #will be like:[22,642,1391]
+    for index,label in enumerate(eval_y):
+        if label>0:
+            eval_y_short.append(index)
+    return eval_y_short
+
+#get top5 predicted labels
+def get_label_using_logits(logits,top_number=5):
+    index_list=np.argsort(logits)[-top_number:]
+    index_list=index_list[::-1]
+    return index_list
+
+#统计预测的准确率
+def calculate_accuracy(labels_predicted, labels,eval_counter):
+    label_nozero=[]
+    #print("labels:",labels)
+    labels=list(labels)
+    for index,label in enumerate(labels):
+        if label>0:
+            label_nozero.append(index)
+    if eval_counter<2:
+        print("labels_predicted:",labels_predicted," ;labels_nozero:",label_nozero)
+    count = 0
+    label_dict = {x: x for x in label_nozero}
+    for label_predict in labels_predicted:
+        flag = label_dict.get(label_predict, None)
+    if flag is not None:
+        count = count + 1
+    return count / len(labels)
+
+def assign_pretrained_word_embedding(sess,vocabulary_index2word,vocab_size,textCNN,word2vec_model_path):
     print("using pre-trained word emebedding.started.word2vec_model_path:",word2vec_model_path)
-    # word2vecc=word2vec.load('word_embedding.txt') #load vocab-vector fiel.word2vecc['w91874']
     word2vec_model = word2vec.load(word2vec_model_path, kind='bin')
     word2vec_dict = {}
     for word, vector in zip(word2vec_model.vocab, word2vec_model.vectors):
@@ -148,50 +200,6 @@ def assign_pretrained_word_embedding(sess,vocabulary_index2word,vocab_size,textC
     print("word. exists embedding:", count_exist, " ;word not exist embedding:", count_not_exist)
     print("using pre-trained word emebedding.ended...")
 
-# 在验证集上做验证，报告损失、精确度
-def do_eval(sess,textCNN,evalX,evalY,batch_size,vocabulary_index2word_label):
-    number_examples=len(evalX)
-    eval_loss,eval_acc,eval_counter=0.0,0.0,0
-    for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
-        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.dropout_keep_prob: 1}
-        if not FLAGS.multi_label_flag:
-            feed_dict[textCNN.input_y] = evalY[start:end]
-        else:
-            feed_dict[textCNN.input_y_multilabel] = evalY[start:end]
-        curr_eval_loss, logits,curr_eval_acc= sess.run([textCNN.loss_val,textCNN.logits,textCNN.accuracy],feed_dict)#curr_eval_acc--->textCNN.accuracy
-        #label_list_top5 = get_label_using_logits(logits_[0], vocabulary_index2word_label)
-        #curr_eval_acc=calculate_accuracy(list(label_list_top5), evalY[start:end][0],eval_counter)
-        eval_loss,eval_acc,eval_counter=eval_loss+curr_eval_loss,eval_acc+curr_eval_acc,eval_counter+1
-    return eval_loss/float(eval_counter),eval_acc/float(eval_counter)
-
-#从logits中取出前五 get label using logits
-def get_label_using_logits(logits,vocabulary_index2word_label,top_number=1):
-    #print("get_label_using_logits.logits:",logits) #1-d array: array([-5.69036102, -8.54903221, -5.63954401, ..., -5.83969498,-5.84496021, -6.13911009], dtype=float32))
-    index_list=np.argsort(logits)[-top_number:]
-    index_list=index_list[::-1]
-    #label_list=[]
-    #for index in index_list:
-    #    label=vocabulary_index2word_label[index]
-    #    label_list.append(label) #('get_label_using_logits.label_list:', [u'-3423450385060590478', u'2838091149470021485', u'-3174907002942471215', u'-1812694399780494968', u'6815248286057533876'])
-    return index_list
-
-#统计预测的准确率
-def calculate_accuracy(labels_predicted, labels,eval_counter):
-    label_nozero=[]
-    #print("labels:",labels)
-    labels=list(labels)
-    for index,label in enumerate(labels):
-        if label>0:
-            label_nozero.append(index)
-    if eval_counter<2:
-        print("labels_predicted:",labels_predicted," ;labels_nozero:",label_nozero)
-    count = 0
-    label_dict = {x: x for x in label_nozero}
-    for label_predict in labels_predicted:
-        flag = label_dict.get(label_predict, None)
-    if flag is not None:
-        count = count + 1
-    return count / len(labels)
 
 if __name__ == "__main__":
     tf.app.run()
