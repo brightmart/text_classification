@@ -30,8 +30,10 @@ def load_data_multilabel(traning_data_path,vocab_word2index, vocab_label2index,s
     for i,line in enumerate(lines):
         raw_list = line.strip().split("__label__")
         input_list = raw_list[0].strip().split(" ")
-        x=[vocab_word2index.get(x,UNK_ID) for x in input_list if x!='']
+        input_list = [x.strip().replace(" ", "") for x in input_list if x != '']
+        x=[vocab_word2index.get(x,UNK_ID) for x in input_list]
         label_list = raw_list[1:]
+        label_list=[l.strip().replace(" ", "") for l in label_list if l != '']
         label_list=[vocab_label2index[label] for label in label_list]
         y=transform_multilabel_as_multihot(label_list,label_size)
         X.append(x)
@@ -96,8 +98,10 @@ def create_vocabulary(training_data_path,vocab_size,name_scope='cnn'):
         c_labels=Counter()
         for line in lines:
             raw_list=line.strip().split("__label__")
-            input_list=raw_list[0].strip().split(" ")
-            label_list=raw_list[1:]
+
+            input_list = raw_list[0].strip().split(" ")
+            input_list = [x.strip().replace(" ", "") for x in input_list if x != '']
+            label_list=[l.strip().replace(" ","") for l in raw_list[1:] if l!='']
             c_inputs.update(input_list)
             c_labels.update(label_list)
         #return most frequency words
