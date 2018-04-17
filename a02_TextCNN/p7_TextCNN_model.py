@@ -134,6 +134,7 @@ class TextCNN:
 
 #test started. toy task: given a sequence of data. compute it's label: sum of its previous element,itself and next element greater than a threshold, it's label is 1,otherwise 0.
 #e.g. given inputs:[1,0,1,1,0]; outputs:[0,1,1,1,0].
+#invoke test() below to test the model in this toy task.
 def test():
     #below is a function test; if you use this for text classifiction, you need to transform sentence to indices of vocabulary first. then feed data to the graph.
     num_classes=5
@@ -186,6 +187,5 @@ def compute_single_label(listt):
         result.append(summ)
     return result
 
-#listt=[1,0,1,1,0]
-#compute_result(listt)
-test()
+
+#test()
