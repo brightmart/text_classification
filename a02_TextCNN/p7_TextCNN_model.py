@@ -29,10 +29,14 @@ class TextCNN:
         #self.input_y = tf.placeholder(tf.int32, [None,],name="input_y")  # y:[None,num_classes]
         self.input_y_multilabel = tf.placeholder(tf.float32,[None,self.num_classes], name="input_y_multilabel")  # y:[None,num_classes]. this is for multi-label classification only.
         self.dropout_keep_prob=tf.placeholder(tf.float32,name="dropout_keep_prob")
+        self.iter = tf.placeholder(tf.int32) #training iteration
+        self.tst=tf.placeholder(tf.bool)
 
         self.global_step = tf.Variable(0, trainable=False, name="Global_Step")
         self.epoch_step=tf.Variable(0,trainable=False,name="Epoch_Step")
         self.epoch_increment=tf.assign(self.epoch_step,tf.add(self.epoch_step,tf.constant(1)))
+        self.b1 = tf.Variable(tf.ones([self.embed_size]) / 10)
+        self.b2 = tf.Variable(tf.ones([self.embed_size]) / 10)
         self.decay_steps, self.decay_rate = decay_steps, decay_rate
 
         self.instantiate_weights()
@@ -76,6 +80,7 @@ class TextCNN:
                 #1)each filter with conv2d's output a shape:[1,sequence_length-filter_size+1,1,1];2)*num_filters--->[1,sequence_length-filter_size+1,1,num_filters];3)*batch_size--->[batch_size,sequence_length-filter_size+1,1,num_filters]
                 #input data format:NHWC:[batch, height, width, channels];output:4-D
                 conv=tf.nn.conv2d(self.sentence_embeddings_expanded, filter, strides=[1,1,1,1], padding="VALID",name="conv") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]
+                conv,self.update_ema=self.batchnorm(conv,self.tst, self.iter, self.b1)
                 # ====>c. apply nolinearity
                 b=tf.get_variable("b-%s"%filter_size,[self.num_filters]) #ADD 2017-06-09
                 h=tf.nn.relu(tf.nn.bias_add(conv,b),"relu") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]. tf.nn.bias_add:adds `bias` to `value`
@@ -99,6 +104,28 @@ class TextCNN:
         with tf.name_scope("output"):
             logits = tf.matmul(self.h_drop,self.W_projection) + self.b_projection  #shape:[None, self.num_classes]==tf.matmul([None,self.embed_size],[self.embed_size,self.num_classes])
         return logits
+
+    def batchnorm(self,Ylogits, is_test, iteration, offset, convolutional=False): #check:https://github.com/martin-gorner/tensorflow-mnist-tutorial/blob/master/mnist_4.1_batchnorm_five_layers_relu.py#L89
+        """
+        batch normalization: keep moving average of mean and variance. use it as value for BN when training. when prediction, use value from that batch.
+        :param Ylogits:
+        :param is_test:
+        :param iteration:
+        :param offset:
+        :param convolutional:
+        :return:
+        """
+        exp_moving_avg = tf.train.ExponentialMovingAverage(0.999,iteration)  # adding the iteration prevents from averaging across non-existing iterations
+        bnepsilon = 1e-5
+        if convolutional:
+            mean, variance = tf.nn.moments(Ylogits, [0, 1, 2])
+        else:
+            mean, variance = tf.nn.moments(Ylogits, [0])
+        update_moving_averages = exp_moving_avg.apply([mean, variance])
+        m = tf.cond(is_test, lambda: exp_moving_avg.average(mean), lambda: mean)
+        v = tf.cond(is_test, lambda: exp_moving_avg.average(variance), lambda: variance)
+        Ybn = tf.nn.batch_normalization(Ylogits, m, v, offset, None, bnepsilon)
+        return Ybn, update_moving_averages
 
     def loss_multilabel(self,l2_lambda=0.0001): #0.0001#this loss function is for multi-label classification
         with tf.name_scope("loss"):

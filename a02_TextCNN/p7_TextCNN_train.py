@@ -61,9 +61,9 @@ def main(_):
         if os.path.exists(FLAGS.ckpt_dir+"checkpoint"):
             print("Restoring Variables from Checkpoint.")
             saver.restore(sess,tf.train.latest_checkpoint(FLAGS.ckpt_dir))
-            #for i in range(3): #decay learning rate if necessary.
-            #    print(i,"Going to decay learning rate by half.")
-            #    sess.run(textCNN.learning_rate_decay_half_op)
+            for i in range(3): #decay learning rate if necessary.
+                print(i,"Going to decay learning rate by half.")
+                sess.run(textCNN.learning_rate_decay_half_op)
         else:
             print('Initializing Variables')
             sess.run(tf.global_variables_initializer())
@@ -73,24 +73,26 @@ def main(_):
         #3.feed data & training
         number_of_training_data=len(trainX)
         batch_size=FLAGS.batch_size
+        iteration=0
         for epoch in range(curr_epoch,FLAGS.num_epochs):
             loss, counter =  0.0, 0
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
+                iteration=iteration+1
                 if epoch==0 and counter==0:
                     print("trainX[start:end]:",trainX[start:end])
-                feed_dict = {textCNN.input_x: trainX[start:end],textCNN.dropout_keep_prob: 0.5}
+                feed_dict = {textCNN.input_x: trainX[start:end],textCNN.dropout_keep_prob: 0.5,textCNN.iter: iteration,textCNN.tst: not FLAGS.is_training}
                 if not FLAGS.multi_label_flag:
                     feed_dict[textCNN.input_y] = trainY[start:end]
                 else:
                     feed_dict[textCNN.input_y_multilabel]=trainY[start:end]
-                curr_loss,lr,_=sess.run([textCNN.loss_val,textCNN.learning_rate,textCNN.train_op],feed_dict)
+                curr_loss,lr,_,_=sess.run([textCNN.loss_val,textCNN.learning_rate,textCNN.update_ema,textCNN.train_op],feed_dict)
                 loss,counter=loss+curr_loss,counter+1
                 if counter %50==0:
                     print("Epoch %d\tBatch %d\tTrain Loss:%.3f\tLearning rate:%.5f" %(epoch,counter,loss/float(counter),lr))
 
                 ########################################################################################################
                 if start%(1000*FLAGS.batch_size)==0: # eval every 3000 steps.
-                    eval_loss, f1_score, precision, recall = do_eval(sess, textCNN, testX, testY)
+                    eval_loss, f1_score, precision, recall = do_eval(sess, textCNN, testX, testY,iteration)
                     print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tPrecision:%.3f\tRecall:%.3f" % (epoch, eval_loss, f1_score, precision, recall))
                     # save model to checkpoint
                     save_path = FLAGS.ckpt_dir + "model.ckpt"
@@ -103,7 +105,7 @@ def main(_):
             # 4.validation
             print(epoch,FLAGS.validate_every,(epoch % FLAGS.validate_every==0))
             if epoch % FLAGS.validate_every==0:
-                eval_loss,f1_score,precision,recall=do_eval(sess,textCNN,testX,testY)
+                eval_loss,f1_score,precision,recall=do_eval(sess,textCNN,testX,testY,iteration)
                 print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tPrecision:%.3f\tRecall:%.3f" % (epoch,eval_loss,f1_score,precision,recall))
                 #save model to checkpoint
                 save_path=FLAGS.ckpt_dir+"model.ckpt"
@@ -116,12 +118,12 @@ def main(_):
 
 
 # 在验证集上做验证，报告损失、精确度
-def do_eval(sess,textCNN,evalX,evalY):
+def do_eval(sess,textCNN,evalX,evalY,iteration):
     number_examples=len(evalX)
     eval_loss,eval_counter,eval_f1_score,eval_p,eval_r=0.0,0,0.0,0.0,0.0
     batch_size=1
     for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
-        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.input_y_multilabel:evalY[start:end],textCNN.dropout_keep_prob: 1.0}
+        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.input_y_multilabel:evalY[start:end],textCNN.dropout_keep_prob: 1.0,textCNN.iter: iteration,textCNN.tst: True}
         curr_eval_loss, logits= sess.run([textCNN.loss_val,textCNN.logits],feed_dict)#curr_eval_acc--->textCNN.accuracy
         label_list_top5 = get_label_using_logits(logits[0])
         f1_score,p,r=compute_f1_score(list(label_list_top5), evalY[start:end][0])
