@@ -37,14 +37,15 @@ class TextCNN:
 
         self.instantiate_weights()
         self.logits = self.inference() #[None, self.label_size]. main computation graph is here.
+        self.possibility=tf.nn.sigmoid(self.logits)
         if not is_training:
             return
         if multi_label_flag:print("going to use multi label loss.");self.loss_val = self.loss_multilabel()
         else:print("going to use single label loss.");self.loss_val = self.loss()
         self.train_op = self.train()
-        self.predictions = tf.argmax(self.logits, 1, name="predictions")  # shape:[None,]
-        print("self.predictions:",self.predictions)
         if not self.multi_label_flag:
+            self.predictions = tf.argmax(self.logits, 1, name="predictions")  # shape:[None,]
+            print("self.predictions:", self.predictions)
             correct_prediction = tf.equal(tf.cast(self.predictions,tf.int32), self.input_y) #tf.argmax(self.logits, 1)-->[batch_size]
             self.accuracy =tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="Accuracy") # shape=()
 
@@ -131,30 +132,60 @@ class TextCNN:
         train_op = tf.contrib.layers.optimize_loss(self.loss_val, global_step=self.global_step,learning_rate=learning_rate, optimizer="Adam",clip_gradients=self.clip_gradients)
         return train_op
 
-#test started
-#def test():
-    #below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
-    #num_classes=3
-    #learning_rate=0.01
-    #batch_size=8
-    #decay_steps=1000
-    #decay_rate=0.9
-    #sequence_length=5
-    #vocab_size=10000
-    #embed_size=100
-    #is_training=True
-    #dropout_keep_prob=1 #0.5
-    #filter_sizes=[3,4,5]
-    #num_filters=128
-    #textRNN=TextCNN(filter_sizes,num_filters,num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,is_training)
-    #with tf.Session() as sess:
-    #   sess.run(tf.global_variables_initializer())
-    #   for i in range(100):
-    #        input_x=np.zeros((batch_size,sequence_length)) #[None, self.sequence_length]
-    #        input_x[input_x>0.5]=1
-    #       input_x[input_x <= 0.5] = 0
-    #       input_y=np.array([1,0,1,1,1,2,1,1])#np.zeros((batch_size),dtype=np.int32) #[None, self.sequence_length]
-    #       loss,acc,predict,W_projection_value,_=sess.run([textRNN.loss_val,textRNN.accuracy,textRNN.predictions,textRNN.W_projection,textRNN.train_op],feed_dict={textRNN.input_x:input_x,textRNN.input_y:input_y,textRNN.dropout_keep_prob:dropout_keep_prob})
-    #       print("loss:",loss,"acc:",acc,"label:",input_y,"prediction:",predict)
-            #print("W_projection_value_:",W_projection_value)
-#test()
+#test started. toy task: given a sequence of data. compute it's label: sum of its previous element,itself and next element greater than a threshold, it's label is 1,otherwise 0.
+#e.g. given inputs:[1,0,1,1,0]; outputs:[0,1,1,1,0].
+def test():
+    #below is a function test; if you use this for text classifiction, you need to transform sentence to indices of vocabulary first. then feed data to the graph.
+    num_classes=5
+    learning_rate=0.001
+    batch_size=8
+    decay_steps=1000
+    decay_rate=0.95
+    sequence_length=5
+    vocab_size=10000
+    embed_size=100
+    is_training=True
+    dropout_keep_prob=1.0 #0.5
+    filter_sizes=[2,3,4]
+    num_filters=128
+    multi_label_flag=True
+    textRNN=TextCNN(filter_sizes,num_filters,num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,is_training,multi_label_flag=multi_label_flag)
+    with tf.Session() as sess:
+       sess.run(tf.global_variables_initializer())
+       for i in range(500):
+           input_x=np.random.randn(batch_size,sequence_length) #[None, self.sequence_length]
+           input_x[input_x>=0]=1
+           input_x[input_x <0] = 0
+           input_y_multilabel=get_label_y(input_x)
+           loss,possibility,W_projection_value,_=sess.run([textRNN.loss_val,textRNN.possibility,textRNN.W_projection,textRNN.train_op],
+                                                    feed_dict={textRNN.input_x:input_x,textRNN.input_y_multilabel:input_y_multilabel,textRNN.dropout_keep_prob:dropout_keep_prob})
+           print(i,"loss:",loss,"-------------------------------------------------------")
+           print("label:",input_y_multilabel);print("possibility:",possibility)
+
+def get_label_y(input_x):
+    length=input_x.shape[0]
+    input_y=np.zeros((input_x.shape))
+    for i in range(length):
+        element=input_x[i,:] #[5,]
+        result=compute_single_label(element)
+        input_y[i,:]=result
+    return input_y
+
+def compute_single_label(listt):
+    result=[]
+    length=len(listt)
+    for i,e in enumerate(listt):
+        previous=listt[i-1] if i>0 else 0
+        current=listt[i]
+        next=listt[i+1] if i<length-1 else 0
+        summ=previous+current+next
+        if summ>=2:
+            summ=1
+        else:
+            summ=0
+        result.append(summ)
+    return result
+
+#listt=[1,0,1,1,0]
+#compute_result(listt)
+test()
