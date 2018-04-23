@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+#import sys
+#reload(sys)
+#sys.setdefaultencoding('utf-8') #gb2312
 #training the model.
 #process--->1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
 #import sys
@@ -14,11 +17,11 @@ import word2vec
 #configuration
 FLAGS=tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string("traning_data_path","../data/train_label_single100_merge.txt","path of traning data.") #sample_multiple_label.txt-->train_label_single100_merge
+tf.app.flags.DEFINE_string("traning_data_path","../data/sample_multiple_label.txt","path of traning data.") #sample_multiple_label.txt-->train_label_single100_merge
 tf.app.flags.DEFINE_integer("vocab_size",100000,"maximum vocab size.")
 
-tf.app.flags.DEFINE_float("learning_rate",0.0001,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 32, "Batch size for training/evaluating.") #批处理的大小 32-->128
+tf.app.flags.DEFINE_float("learning_rate",0.0003,"learning rate")
+tf.app.flags.DEFINE_integer("batch_size", 64, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_integer("decay_steps", 1000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
 tf.app.flags.DEFINE_float("decay_rate", 1.0, "Rate of decay for learning rate.") #0.65一次衰减多少
 tf.app.flags.DEFINE_string("ckpt_dir","text_cnn_title_desc_checkpoint/","checkpoint location for the model")
@@ -32,7 +35,7 @@ tf.app.flags.DEFINE_integer("num_filters", 128, "number of filters") #256--->512
 tf.app.flags.DEFINE_string("word2vec_model_path","word2vec-title-desc.bin","word2vec's vocabulary and vectors")
 tf.app.flags.DEFINE_string("name_scope","cnn","name scope value.")
 tf.app.flags.DEFINE_boolean("multi_label_flag",True,"use multi label or single label.")
-filter_sizes=[7]
+filter_sizes=[6,7,8]
 
 #1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
 def main(_):
@@ -61,9 +64,9 @@ def main(_):
         if os.path.exists(FLAGS.ckpt_dir+"checkpoint"):
             print("Restoring Variables from Checkpoint.")
             saver.restore(sess,tf.train.latest_checkpoint(FLAGS.ckpt_dir))
-            for i in range(3): #decay learning rate if necessary.
-                print(i,"Going to decay learning rate by half.")
-                sess.run(textCNN.learning_rate_decay_half_op)
+            #for i in range(3): #decay learning rate if necessary.
+            #    print(i,"Going to decay learning rate by half.")
+            #    sess.run(textCNN.learning_rate_decay_half_op)
         else:
             print('Initializing Variables')
             sess.run(tf.global_variables_initializer())
@@ -91,7 +94,7 @@ def main(_):
                     print("Epoch %d\tBatch %d\tTrain Loss:%.3f\tLearning rate:%.5f" %(epoch,counter,loss/float(counter),lr))
 
                 ########################################################################################################
-                if start%(1000*FLAGS.batch_size)==0: # eval every 3000 steps.
+                if start%(2000*FLAGS.batch_size)==0: # eval every 3000 steps.
                     eval_loss, f1_score, precision, recall = do_eval(sess, textCNN, testX, testY,iteration)
                     print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tPrecision:%.3f\tRecall:%.3f" % (epoch, eval_loss, f1_score, precision, recall))
                     # save model to checkpoint
@@ -112,7 +115,7 @@ def main(_):
                 saver.save(sess,save_path,global_step=epoch)
 
         # 5.最后在测试集上做测试，并报告测试准确率 Test
-        test_loss,_,_,_ = do_eval(sess, textCNN, testX, testY)
+        test_loss,_,_,_ = do_eval(sess, textCNN, testX, testY,iteration)
         print("Test Loss:%.3f" % ( test_loss))
     pass
 
