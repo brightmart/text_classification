@@ -35,8 +35,8 @@ class TextCNN:
         self.global_step = tf.Variable(0, trainable=False, name="Global_Step")
         self.epoch_step=tf.Variable(0,trainable=False,name="Epoch_Step")
         self.epoch_increment=tf.assign(self.epoch_step,tf.add(self.epoch_step,tf.constant(1)))
-        self.b1 = tf.Variable(tf.ones([self.embed_size]) / 10)
-        self.b2 = tf.Variable(tf.ones([self.embed_size]) / 10)
+        self.b1 = tf.Variable(tf.ones([self.num_filters]) / 10)
+        self.b2 = tf.Variable(tf.ones([self.num_filters]) / 10)
         self.decay_steps, self.decay_rate = decay_steps, decay_rate
 
         self.instantiate_weights()
