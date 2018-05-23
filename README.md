@@ -5,10 +5,7 @@ the purpose of this repository is to explore text classification methods in NLP 
 UPDATE: 
 
 1.<a href='https://github.com/brightmart/ai_law'>
-    
-    AI_LAW: predict the name of crime(accusation),relevant-articles given facts of law cases, 
-    
-    apply AI in law cases task, has been released</a> 
+    AI_LAW: predict the name of crime(accusation),relevant-articles given facts of law cases</a>apply AI in law cases task, has been released 
 
 2. <a href='https://github.com/brightmart/nlu_sim'>sentence similarity project has been released</a> you can check it if you like.
 
