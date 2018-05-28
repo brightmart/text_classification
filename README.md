@@ -282,6 +282,7 @@ In my training data, for each example, i have four parts. each part has same len
 
 check:p1_HierarchicalAttention_model.py
 
+for attentive attention you can check <a href='https://github.com/brightmart/text_classification/issues/55'>attentive attention</a>
 
 -------------------------------------------------------------------------
 
