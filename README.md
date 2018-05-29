@@ -118,6 +118,19 @@ Some util function is in data_util.py;
 typical input like: "x1 x2 x3 x4 x5 __label__ 323434" where 'x1,x2' is words, '323434' is label;
 it has a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
 
+Pretrain Work Embedding:
+-------------------------------------------------------------------------------------------------------
+if word2vec.load not works, you may load pretrained word embedding, especially for chinese word embedding use following lines:
+
+import gensim
+
+from gensim.models import KeyedVectors
+
+word2vec_model = KeyedVectors.load_word2vec_format(word2vec_model_path, binary=True, unicode_errors='ignore')  #
+
+or you can turn off use pretrain word embedding flag to false to disable loading word embedding.
+
+
 Models Detail:
 -------------------------------------------------------------------------
 
