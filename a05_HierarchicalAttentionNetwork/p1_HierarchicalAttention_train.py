@@ -183,7 +183,7 @@ def do_eval(sess,textCNN,evalX,evalY,batch_size,vocabulary_index2word_label):
     number_examples=len(evalX)
     eval_loss,eval_acc,eval_counter=0.0,0.0,0
     for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
-        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.dropout_keep_prob: 1}
+        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.dropout_keep_prob: 0.5} # 0.5, keeping the dropout_keep_prob the same as in training (see line 100).
         if not FLAGS.multi_label_flag:
             feed_dict[textCNN.input_y] = evalY[start:end]
         else:
