@@ -26,33 +26,32 @@ class TextCNN:
 
         # add placeholder (X,label)
         self.input_x = tf.placeholder(tf.int32, [None, self.sequence_length], name="input_x")  # X
-        self.input_y = tf.placeholder(tf.int32, [None,],name="input_y")  # y:[None,num_classes]
+        #self.input_y = tf.placeholder(tf.int32, [None,],name="input_y")  # y:[None,num_classes]
         self.input_y_multilabel = tf.placeholder(tf.float32,[None,self.num_classes], name="input_y_multilabel")  # y:[None,num_classes]. this is for multi-label classification only.
         self.dropout_keep_prob=tf.placeholder(tf.float32,name="dropout_keep_prob")
+        self.iter = tf.placeholder(tf.int32) #training iteration
+        self.tst=tf.placeholder(tf.bool)
 
         self.global_step = tf.Variable(0, trainable=False, name="Global_Step")
         self.epoch_step=tf.Variable(0,trainable=False,name="Epoch_Step")
         self.epoch_increment=tf.assign(self.epoch_step,tf.add(self.epoch_step,tf.constant(1)))
+        self.b1 = tf.Variable(tf.ones([self.num_filters]) / 10)
+        self.b2 = tf.Variable(tf.ones([self.num_filters]) / 10)
         self.decay_steps, self.decay_rate = decay_steps, decay_rate
 
         self.instantiate_weights()
         self.logits = self.inference() #[None, self.label_size]. main computation graph is here.
+        self.possibility=tf.nn.sigmoid(self.logits)
         if not is_training:
             return
-        if multi_label_flag:
-            print("going to use multi label loss.")
-            self.loss_val = self.loss_multilabel()
-        else:
-            print("going to use single label loss.")
-            self.loss_val = self.loss()
+        if multi_label_flag:print("going to use multi label loss.");self.loss_val = self.loss_multilabel()
+        else:print("going to use single label loss.");self.loss_val = self.loss()
         self.train_op = self.train()
-        self.predictions = tf.argmax(self.logits, 1, name="predictions")  # shape:[None,]
-
         if not self.multi_label_flag:
+            self.predictions = tf.argmax(self.logits, 1, name="predictions")  # shape:[None,]
+            print("self.predictions:", self.predictions)
             correct_prediction = tf.equal(tf.cast(self.predictions,tf.int32), self.input_y) #tf.argmax(self.logits, 1)-->[batch_size]
             self.accuracy =tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="Accuracy") # shape=()
-        else:
-            self.accuracy = tf.constant(0.5) #fuke accuracy. (you can calcuate accuracy outside of graph using method calculate_accuracy(...) in train.py)
 
     def instantiate_weights(self):
         """define all weights here"""
@@ -62,7 +61,7 @@ class TextCNN:
             self.b_projection = tf.get_variable("b_projection",shape=[self.num_classes])       #[label_size] #ADD 2017.06.09
 
     def inference(self):
-        """main computation graph here: 1.embedding-->2.average-->3.linear classifier"""
+        """main computation graph here: 1.embedding-->2.CONV-BN-RELU-MAX_POOLING-->3.linear classifier"""
         # 1.=====>get emebedding of words in the sentence
         self.embedded_words = tf.nn.embedding_lookup(self.Embedding,self.input_x)#[None,sentence_length,embed_size]
         self.sentence_embeddings_expanded=tf.expand_dims(self.embedded_words,-1) #[None,sentence_length,embed_size,1). expand dimension so meet input requirement of 2d-conv
@@ -81,6 +80,7 @@ class TextCNN:
                 #1)each filter with conv2d's output a shape:[1,sequence_length-filter_size+1,1,1];2)*num_filters--->[1,sequence_length-filter_size+1,1,num_filters];3)*batch_size--->[batch_size,sequence_length-filter_size+1,1,num_filters]
                 #input data format:NHWC:[batch, height, width, channels];output:4-D
                 conv=tf.nn.conv2d(self.sentence_embeddings_expanded, filter, strides=[1,1,1,1], padding="VALID",name="conv") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]
+                conv,self.update_ema=self.batchnorm(conv,self.tst, self.iter, self.b1)
                 # ====>c. apply nolinearity
                 b=tf.get_variable("b-%s"%filter_size,[self.num_filters]) #ADD 2017-06-09
                 h=tf.nn.relu(tf.nn.bias_add(conv,b),"relu") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]. tf.nn.bias_add:adds `bias` to `value`
@@ -99,24 +99,35 @@ class TextCNN:
         #4.=====>add dropout: use tf.nn.dropout
         with tf.name_scope("dropout"):
             self.h_drop=tf.nn.dropout(self.h_pool_flat,keep_prob=self.dropout_keep_prob) #[None,num_filters_total]
-
+        self.h_drop=tf.layers.dense(self.h_drop,self.num_filters_total,activation=tf.nn.tanh,use_bias=True)
         #5. logits(use linear layer)and predictions(argmax)
         with tf.name_scope("output"):
             logits = tf.matmul(self.h_drop,self.W_projection) + self.b_projection  #shape:[None, self.num_classes]==tf.matmul([None,self.embed_size],[self.embed_size,self.num_classes])
         return logits
 
-    def loss(self,l2_lambda=0.0001):#0.001
-        with tf.name_scope("loss"):
-            #input: `logits`:[batch_size, num_classes], and `labels`:[batch_size]
-            #output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
-            losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_y, logits=self.logits);#sigmoid_cross_entropy_with_logits.#losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input_y,logits=self.logits)
-            #print("1.sparse_softmax_cross_entropy_with_logits.losses:",losses) # shape=(?,)
-            loss=tf.reduce_mean(losses)#print("2.loss.loss:", loss) #shape=()
-            l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * l2_lambda
-            loss=loss+l2_losses
-        return loss
+    def batchnorm(self,Ylogits, is_test, iteration, offset, convolutional=False): #check:https://github.com/martin-gorner/tensorflow-mnist-tutorial/blob/master/mnist_4.1_batchnorm_five_layers_relu.py#L89
+        """
+        batch normalization: keep moving average of mean and variance. use it as value for BN when training. when prediction, use value from that batch.
+        :param Ylogits:
+        :param is_test:
+        :param iteration:
+        :param offset:
+        :param convolutional:
+        :return:
+        """
+        exp_moving_avg = tf.train.ExponentialMovingAverage(0.999,iteration)  # adding the iteration prevents from averaging across non-existing iterations
+        bnepsilon = 1e-5
+        if convolutional:
+            mean, variance = tf.nn.moments(Ylogits, [0, 1, 2])
+        else:
+            mean, variance = tf.nn.moments(Ylogits, [0])
+        update_moving_averages = exp_moving_avg.apply([mean, variance])
+        m = tf.cond(is_test, lambda: exp_moving_avg.average(mean), lambda: mean)
+        v = tf.cond(is_test, lambda: exp_moving_avg.average(variance), lambda: variance)
+        Ybn = tf.nn.batch_normalization(Ylogits, m, v, offset, None, bnepsilon)
+        return Ybn, update_moving_averages
 
-    def loss_multilabel(self,l2_lambda=0.00001): #0.0001#this loss function is for multi-label classification
+    def loss_multilabel(self,l2_lambda=0.0001): #0.0001#this loss function is for multi-label classification
         with tf.name_scope("loss"):
             #input: `logits` and `labels` must have the same shape `[batch_size, num_classes]`
             #output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
@@ -131,36 +142,77 @@ class TextCNN:
             loss=loss+l2_losses
         return loss
 
+    def loss(self,l2_lambda=0.0001):#0.001
+        with tf.name_scope("loss"):
+            #input: `logits`:[batch_size, num_classes], and `labels`:[batch_size]
+            #output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
+            losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_y, logits=self.logits);#sigmoid_cross_entropy_with_logits.#losses=tf.nn.softmax_cross_entropy_with_logits(labels=self.input_y,logits=self.logits)
+            #print("1.sparse_softmax_cross_entropy_with_logits.losses:",losses) # shape=(?,)
+            loss=tf.reduce_mean(losses)#print("2.loss.loss:", loss) #shape=()
+            l2_losses = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name]) * l2_lambda
+            loss=loss+l2_losses
+        return loss
+
     def train(self):
         """based on the loss, use SGD to update parameter"""
         learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps,self.decay_rate, staircase=True)
         train_op = tf.contrib.layers.optimize_loss(self.loss_val, global_step=self.global_step,learning_rate=learning_rate, optimizer="Adam",clip_gradients=self.clip_gradients)
         return train_op
 
-#test started
-#def test():
-    #below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
-    #num_classes=3
-    #learning_rate=0.01
-    #batch_size=8
-    #decay_steps=1000
-    #decay_rate=0.9
-    #sequence_length=5
-    #vocab_size=10000
-    #embed_size=100
-    #is_training=True
-    #dropout_keep_prob=1 #0.5
-    #filter_sizes=[3,4,5]
-    #num_filters=128
-    #textRNN=TextCNN(filter_sizes,num_filters,num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,is_training)
-    #with tf.Session() as sess:
-    #   sess.run(tf.global_variables_initializer())
-    #   for i in range(100):
-    #        input_x=np.zeros((batch_size,sequence_length)) #[None, self.sequence_length]
-    #        input_x[input_x>0.5]=1
-    #       input_x[input_x <= 0.5] = 0
-    #       input_y=np.array([1,0,1,1,1,2,1,1])#np.zeros((batch_size),dtype=np.int32) #[None, self.sequence_length]
-    #       loss,acc,predict,W_projection_value,_=sess.run([textRNN.loss_val,textRNN.accuracy,textRNN.predictions,textRNN.W_projection,textRNN.train_op],feed_dict={textRNN.input_x:input_x,textRNN.input_y:input_y,textRNN.dropout_keep_prob:dropout_keep_prob})
-    #       print("loss:",loss,"acc:",acc,"label:",input_y,"prediction:",predict)
-            #print("W_projection_value_:",W_projection_value)
+#test started. toy task: given a sequence of data. compute it's label: sum of its previous element,itself and next element greater than a threshold, it's label is 1,otherwise 0.
+#e.g. given inputs:[1,0,1,1,0]; outputs:[0,1,1,1,0].
+#invoke test() below to test the model in this toy task.
+def test():
+    #below is a function test; if you use this for text classifiction, you need to transform sentence to indices of vocabulary first. then feed data to the graph.
+    num_classes=5
+    learning_rate=0.001
+    batch_size=8
+    decay_steps=1000
+    decay_rate=0.95
+    sequence_length=5
+    vocab_size=10000
+    embed_size=100
+    is_training=True
+    dropout_keep_prob=1.0 #0.5
+    filter_sizes=[2,3,4]
+    num_filters=128
+    multi_label_flag=True
+    textRNN=TextCNN(filter_sizes,num_filters,num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,is_training,multi_label_flag=multi_label_flag)
+    with tf.Session() as sess:
+       sess.run(tf.global_variables_initializer())
+       for i in range(500):
+           input_x=np.random.randn(batch_size,sequence_length) #[None, self.sequence_length]
+           input_x[input_x>=0]=1
+           input_x[input_x <0] = 0
+           input_y_multilabel=get_label_y(input_x)
+           loss,possibility,W_projection_value,_=sess.run([textRNN.loss_val,textRNN.possibility,textRNN.W_projection,textRNN.train_op],
+                                                    feed_dict={textRNN.input_x:input_x,textRNN.input_y_multilabel:input_y_multilabel,textRNN.dropout_keep_prob:dropout_keep_prob})
+           print(i,"loss:",loss,"-------------------------------------------------------")
+           print("label:",input_y_multilabel);print("possibility:",possibility)
+
+def get_label_y(input_x):
+    length=input_x.shape[0]
+    input_y=np.zeros((input_x.shape))
+    for i in range(length):
+        element=input_x[i,:] #[5,]
+        result=compute_single_label(element)
+        input_y[i,:]=result
+    return input_y
+
+def compute_single_label(listt):
+    result=[]
+    length=len(listt)
+    for i,e in enumerate(listt):
+        previous=listt[i-1] if i>0 else 0
+        current=listt[i]
+        next=listt[i+1] if i<length-1 else 0
+        summ=previous+current+next
+        if summ>=2:
+            summ=1
+        else:
+            summ=0
+        result.append(summ)
+    return result
+
+
 #test()

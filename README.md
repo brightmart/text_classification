@@ -1,6 +1,15 @@
 Text Classification
 -------------------------------------------------------------------------
-the purpose of this repository is to explore text classification methods in NLP with deep learning. 
+the purpose of this repository is to explore text classification methods in NLP with deep learning.
+
+UPDATE: 
+
+1. <a href='https://github.com/brightmart/ai_law'>
+    Apply AI in law cases task(AI_LAW): Predict the name of crimes(accusations), relevant-articles given facts of law cases</a>, has been released 
+
+2. <a href='https://github.com/brightmart/nlu_sim'>sentence similarity project has been released</a> you can check it if you like.
+
+3. if you want to try a model now, you can go to folder 'a02_TextCNN', run 'python -u p7_TextCNN_train.py', it will use sample data to train a model, and print loss and F1 score periodically.
 
 it has all kinds of baseline models for text classificaiton.
 
@@ -20,7 +29,9 @@ we implement two memory network. one is dynamic memory network. previously it re
 
 the second memory network we implemented is recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task. 
 
-if you need some sample data and word embedding pertrained on word2vec, you can find it in closed issues, such as:<a href="https://github.com/brightmart/text_classification/issues/3">issue 3</a>
+if you need some sample data and word embedding pertrained on word2vec, you can find it in closed issues, such as:<a href="https://github.com/brightmart/text_classification/issues/3">issue 3</a>. 
+
+you can also find some sample data at folder "data". it contains two files:'sample_single_label.txt', contains 50k data with single label; 'sample_multiple_label.txt', contains 20k data with multiple labels. input and label of is separate by "   __label__".
 
 if you want to know more detail about dataset of text classification or task these models can be used, one of choose is below:
 https://biendata.com/competition/zhihu/
@@ -39,9 +50,10 @@ Models:
 8) Dynamic Memory Network
 9) EntityNetwork:tracking state of the world
 10) Ensemble models
-11) Stacking for single model level (TODO): 
+11) Boosting: 
 
     for a single model, stack identical models together. each layer is a model. the result will be based on logits added together. the only connection between layers are label's weights. the front layer's prediction error rate of each label will become weight for the next layers. those labels with high error rate will have big weight. so later layer's will pay more attention to those mis-predicted labels, and try to fix previous mistake of former layer. as a result, we will get a much strong model.
+    check a00_boosting/boosting.py
 
 and other models:
 
@@ -70,21 +82,21 @@ Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h 
  
  Notice: 
  
- 'm' stand for minutes; 'h' stand for hours;
+ `m` stand for **minutes**; `h` stand for **hours**;
  
-'HierAtteNet' means Hierarchical Attention Networkk;
+`HierAtteNet` means Hierarchical Attention Networkk;
 
-'Seq2seqAttn' means Seq2seq with attention;
+`Seq2seqAttn` means Seq2seq with attention;
 
-'DynamicMemory' means DynamicMemoryNetwork;
+`DynamicMemory` means DynamicMemoryNetwork;
 
-'Transformer' stand for model from 'Attention Is All You Need'.
+`Transformer` stand for model from 'Attention Is All You Need'.
 
 Useage:
 -------------------------------------------------------------------------------------------------------
-1) model is in xxx_model.py
-2) run python xxx_train.py to train the model
-3) run python xxx_predict.py to do inference(test).
+1) model is in `xxx_model.py`
+2) run python `xxx_train.py` to train the model
+3) run python `xxx_predict.py` to do inference(test).
 
 Each model has a test method under the model class. you can run the test method first to check whether the model can work properly.
 
@@ -94,7 +106,9 @@ Environment:
 -------------------------------------------------------------------------------------------------------
 python 2.7+ tensorflow 1.1
 
-(tensorflow 1.2 also works; most of models should also work fine in other tensorflow version, since we use very few features bond to certain version; if you use python 3.5, it will be fine as long as you change print/try catch function)
+(tensorflow 1.2,1.3,1.4 also works; most of models should also work fine in other tensorflow version, since we use very few features bond to certain version; if you use python 3.5, it will be fine as long as you change print/try catch function)
+
+TextCNN model is already transfomed to python 3.6
 
 -------------------------------------------------------------------------
 
@@ -103,6 +117,19 @@ Notice:
 Some util function is in data_util.py; 
 typical input like: "x1 x2 x3 x4 x5 __label__ 323434" where 'x1,x2' is words, '323434' is label;
 it has a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
+
+Pretrain Work Embedding:
+-------------------------------------------------------------------------------------------------------
+if word2vec.load not works, you may load pretrained word embedding, especially for chinese word embedding use following lines:
+
+import gensim
+
+from gensim.models import KeyedVectors
+
+word2vec_model = KeyedVectors.load_word2vec_format(word2vec_model_path, binary=True, unicode_errors='ignore')  #
+
+or you can turn off use pretrain word embedding flag to false to disable loading word embedding.
+
 
 Models Detail:
 -------------------------------------------------------------------------
@@ -119,6 +146,7 @@ result: performance is as good as paper, speed also very fast.
 
 check: p5_fastTextB_model.py
 
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/fastText.JPG)
 -------------------------------------------------------------------------
 
 2.TextCNN:
@@ -141,14 +169,24 @@ Thirdly, we will concatenate scalars to form final features. It is a fixed-size 
 
 Finally, we will use linear layer to project these features to per-defined labels.
 
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/TextCNN.JPG)
+
 -------------------------------------------------------------------------
 
 
 3.TextRNN
 -------------
-Structure:embedding--->bi-directional lstm--->concat output--->average----->softmax
+Structure v1:embedding--->bi-directional lstm--->concat output--->average----->softmax layer
 
 check: p8_TextRNN_model.py
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/bi-directionalRNN.JPG)
+
+Structure v2:embedding-->bi-directional lstm---->dropout-->concat ouput--->lstm--->droput-->FC layer-->softmax layer
+
+check: p8_TextRNN_model_multilayer.py
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/emojifier-v2.png)
 
 
 -------------------------------------------------------------------------
@@ -205,6 +243,7 @@ for left side context, it use a recurrent structure, a no-linearity transfrom of
 
 check: p71_TextRCNN_model.py
 
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/RCNN.JPG)
 
 -------------------------------------------------------------------------
 
@@ -225,6 +264,8 @@ Structure:
 5) Sentence Attetion: sentence level attention to get important sentence among sentences
 
 5) FC+Softmax
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/HAN.JPG)
 
 In NLP, text classification can be done for single sentence, but it can also be used for multiple sentences. we may call it document classification. Words are form to sentence. And sentence are form to document. In this circumstance, there may exists a intrinsic structure. So how can we model this kinds of task? Does all parts of document are equally relevant? And how we determine which part are more important than another?
 
@@ -254,6 +295,8 @@ In my training data, for each example, i have four parts. each part has same len
 
 check:p1_HierarchicalAttention_model.py
 
+for attentive attention you can check <a href='https://github.com/brightmart/text_classification/issues/55'>attentive attention</a>
+
 -------------------------------------------------------------------------
 
 9.Seq2seq with attention
@@ -263,6 +306,8 @@ Implementation seq2seq with attention derived from <a href="https://arxiv.org/pd
 I.Structure:
 
 1)embedding 2)bi-GRU too get rich representation from source sentences(forward & backward). 3)decoder with attention.
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/seq2seqAttention.JPG)
 
 II.Input of data:
 
@@ -307,6 +352,8 @@ we do it in parallell style.layer normalization,residual connection, and mask ar
 For every building blocks, we include a test function in the each file below, and we've test each small piece successfully.
 
 Sequence to sequence with attention is a typical model to solve sequence generation problem, such as translate, dialogue system. most of time, it use RNN as buidling block to do these tasks. util recently, people also apply convolutional Neural Network for sequence to sequence problem. Transformer, however, it perform these tasks solely on attention mechansim. it is fast and acheive new state-of-art result.
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/attention_is_all_you_need.JPG)
 
 It also has two main parts: encoder and decoder. below is desc from paper:
 
@@ -365,6 +412,8 @@ b. get weighted sum of hidden state using possibility distribution.
 
 c. non-linearity transform of query and hidden state to get predict label.
 
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/EntityNet.JPG)
+
 Main take away from this model:
 
 1) use blocks of keys and values, which is independent from each other. so it can be run in parallel.
@@ -390,6 +439,8 @@ Outlook of Model:
 3.Episodic Memory Module: with inputs,it chooses which parts of inputs to focus on through the attention mechanism, taking into account of question and previous memory====>it poduce a 'memory' vecotr.
 
 4.Answer Module:generate an answer from the final memory vector.
+
+![alt text](https://github.com/brightmart/text_classification/blob/master/images/DMN.JPG)
 
 Detail:
 

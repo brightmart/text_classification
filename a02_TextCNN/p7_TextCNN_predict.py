@@ -7,7 +7,7 @@ sys.setdefaultencoding('utf8')
 import tensorflow as tf
 import numpy as np
 #from p5_fastTextB_model import fastTextB as fastText
-from data_util_zhihu import load_data_predict,load_final_test_data,create_voabulary,create_voabulary_label
+from a02_TextCNN.other_experiement.data_util_zhihu import load_data_predict,load_final_test_data,create_voabulary,create_voabulary_label
 from tflearn.data_utils import pad_sequences #to_categorical
 import os
 import codecs
@@ -15,7 +15,6 @@ from p7_TextCNN_model import TextCNN
 
 #configuration
 FLAGS=tf.app.flags.FLAGS
-tf.app.flags.DEFINE_integer("num_classes",1999,"number of label")
 tf.app.flags.DEFINE_float("learning_rate",0.01,"learning rate")
 tf.app.flags.DEFINE_integer("batch_size", 1, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_integer("decay_steps", 5000, "how many steps before decay learning rate.") #批处理的大小 32-->128
@@ -30,9 +29,6 @@ tf.app.flags.DEFINE_string("predict_target_file","text_cnn_title_desc_checkpoint
 tf.app.flags.DEFINE_string("predict_source_file",'test-zhihu-forpredict-title-desc-v6.txt',"target file path for final prediction") #test-zhihu-forpredict-v4only-title.txt
 tf.app.flags.DEFINE_string("word2vec_model_path","zhihu-word2vec-title-desc.bin-100","word2vec's vocabulary and vectors") #zhihu-word2vec.bin-100
 tf.app.flags.DEFINE_integer("num_filters", 256, "number of filters") #128
-tf.app.flags.DEFINE_string("ckpt_dir2","text_cnn_title_desc_checkpoint_exp/","checkpoint location for the model")
-
-#tf.app.flags.DEFINE_boolean("multi_label_flag",True,"use multi label or single label.")
 
 ##############################################################################################################################################
 filter_sizes=[1,2,3,4,5,6,7]#[1,2,3,4,5,6,7]

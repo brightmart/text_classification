@@ -221,7 +221,7 @@ def calculate_accuracy(labels_predicted, labels,eval_counter):
         flag = label_dict.get(label_predict, None)
     if flag is not None:
         count = count + 1
-    return count / len(labels)
+    return count / len(label_nozero)
 
 if __name__ == "__main__":
     tf.app.run()
