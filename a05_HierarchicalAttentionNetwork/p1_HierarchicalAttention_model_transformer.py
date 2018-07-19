@@ -425,10 +425,11 @@ class HierarchicalAttention:
 
 
 # test started
+# given a sequence of inputs, if the sum of inputs is greater than a threshold, then output will be 2, if equals, then output is 1, else 0.
 def test():
     # below is a function test; if you use this for text classifiction, you need to tranform sentence to indices of vocabulary first. then feed data to the graph.
     num_classes = 3
-    learning_rate = 0.01
+    learning_rate = 0.0001
     batch_size = 8
     decay_steps = 1000
     decay_rate = 0.9
@@ -446,15 +447,29 @@ def test():
         sess.run(tf.global_variables_initializer())
         for i in range(1500):
             # input_x should be:[batch_size, num_sentences,self.sequence_length]
-            input_x = np.zeros((batch_size, sequence_length)) #num_sentences
+            input_x = np.random.randn(batch_size, sequence_length) #num_sentences
             input_x[input_x > 0.5] = 1
             input_x[input_x <= 0.5] = 0
-            input_y = np.array(
-                [1, 0, 1, 1, 1, 2, 1, 1])  # np.zeros((batch_size),dtype=np.int32) #[None, self.sequence_length]
+            input_y=get_input_y(i,batch_size)
             loss, acc, predict, W_projection_value, _ = sess.run(
                 [textRNN.loss_val, textRNN.accuracy, textRNN.predictions, textRNN.W_projection, textRNN.train_op],
                 feed_dict={textRNN.input_x: input_x, textRNN.input_y: input_y,
                            textRNN.dropout_keep_prob: dropout_keep_prob})
             print(i,"loss:", loss, "acc:", acc, "label:", input_y, "prediction:", predict)
             # print("W_projection_value_:",W_projection_value)
-#test()
+
+def get_input_y(i,input_x,batch_size):
+    input_y = [0 for j in range(batch_size)]
+    for k in range(batch_size):
+        input_sum = np.sum(input_x[k])
+        #print(i, "input_sum:", input_sum)
+        if input_sum < 10:
+            input_y[k] = 0
+        elif input_sum == 10:
+            input_y[k] = 1
+        else:
+            input_y[k] = 2
+    input_y = np.array(input_y)
+    return input_y
+
+test()
