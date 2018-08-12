@@ -112,11 +112,24 @@ TextCNN model is already transfomed to python 3.6
 
 -------------------------------------------------------------------------
 
-Data Format:
+Data Format(Use your own data):
 -------------------------------------------------------------------------------------------------------
+replace data in 'data/sample_multiple_label.txt', and make sure format as below:
+
+format:
+word1 word2 word3 __label__l1 __label__l2 __label__l3. where part1:'word1 word2 word3' is input(X), part2:'__label__l1 __label__l2 __label__l3' representing there are three labels: [l1,l2,l3]. between part1 and part2 there should be a empty string: ' '.
+
+for example:
+
+[multiple labels] each line  like: 
+'w5466 w138990 w1638 w4301 w6 w470 w202 c1834 c1400 c134 c57 c73 c699 c317 c184 __label__5626661657638885119 __label__4921793805334628695 __label__8904735555009151318'.  
+
+'5626661657638885119','4921793805334628695'，‘8904735555009151318’ are three labels associate with this input string 'w5466 w138990...c699 c317 c184'
+
+Notice:
+([single label]: input as "x1 x2 x3 x4 x5 __label__323434" where 'x1,x2' is words, '323434' is label)
+
 Some util function is in data_util.py; 
-[single label]: input as "x1 x2 x3 x4 x5 __label__323434" where 'x1,x2' is words, '323434' is label;
-[multiple labels] input as w5466 w138990 w1638 w4301 w6 w470 w202 c1834 c1400 c134 c57 c73 c699 c317 c184 __label__5626661657638885119 __label__4921793805334628695 __label__8904735555009151318 __label__2587540952280802350, where '5626661657638885119','4921793805334628695'.. are labels. 
 
 it has a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
 
