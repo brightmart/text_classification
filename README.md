@@ -112,10 +112,12 @@ TextCNN model is already transfomed to python 3.6
 
 -------------------------------------------------------------------------
 
-Notice:
+Data Format:
 -------------------------------------------------------------------------------------------------------
 Some util function is in data_util.py; 
-typical input like: "x1 x2 x3 x4 x5 __label__ 323434" where 'x1,x2' is words, '323434' is label;
+[single label]: input as "x1 x2 x3 x4 x5 __label__323434" where 'x1,x2' is words, '323434' is label;
+[multiple labels] input as w5466 w138990 w1638 w4301 w6 w470 w202 c1834 c1400 c134 c57 c73 c699 c317 c184 __label__5626661657638885119 __label__4921793805334628695 __label__8904735555009151318 __label__2587540952280802350, where '5626661657638885119','4921793805334628695'.. are labels. 
+
 it has a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
 
 Pretrain Work Embedding:

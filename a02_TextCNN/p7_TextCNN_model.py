@@ -80,7 +80,7 @@ class TextCNN:
                 #1)each filter with conv2d's output a shape:[1,sequence_length-filter_size+1,1,1];2)*num_filters--->[1,sequence_length-filter_size+1,1,num_filters];3)*batch_size--->[batch_size,sequence_length-filter_size+1,1,num_filters]
                 #input data format:NHWC:[batch, height, width, channels];output:4-D
                 conv=tf.nn.conv2d(self.sentence_embeddings_expanded, filter, strides=[1,1,1,1], padding="VALID",name="conv") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]
-                conv,self.update_ema=self.batchnorm(conv,self.tst, self.iter, self.b1)
+                conv,self.update_ema=self.batchnorm(conv,self.tst, self.iter, self.b1) # TODO remove it temp
                 # ====>c. apply nolinearity
                 b=tf.get_variable("b-%s"%filter_size,[self.num_filters]) #ADD 2017-06-09
                 h=tf.nn.relu(tf.nn.bias_add(conv,b),"relu") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]. tf.nn.bias_add:adds `bias` to `value`
@@ -186,9 +186,10 @@ def test():
            input_x[input_x <0] = 0
            input_y_multilabel=get_label_y(input_x)
            loss,possibility,W_projection_value,_=sess.run([textRNN.loss_val,textRNN.possibility,textRNN.W_projection,textRNN.train_op],
-                                                    feed_dict={textRNN.input_x:input_x,textRNN.input_y_multilabel:input_y_multilabel,textRNN.dropout_keep_prob:dropout_keep_prob})
+                                                    feed_dict={textRNN.input_x:input_x,textRNN.input_y_multilabel:input_y_multilabel,
+                                                               textRNN.dropout_keep_prob:dropout_keep_prob,textRNN.tst:False})
            print(i,"loss:",loss,"-------------------------------------------------------")
-           print("label:",input_y_multilabel);print("possibility:",possibility)
+           print("label:",input_y_multilabel);#print("possibility:",possibility)
 
 def get_label_y(input_x):
     length=input_x.shape[0]
