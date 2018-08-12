@@ -92,7 +92,7 @@ Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h 
 
 `Transformer` stand for model from 'Attention Is All You Need'.
 
-Useage:
+Usage:
 -------------------------------------------------------------------------------------------------------
 1) model is in `xxx_model.py`
 2) run python `xxx_train.py` to train the model
@@ -116,15 +116,13 @@ Use Your Own Data:
 -------------------------------------------------------------------------------------------------------
 replace data in 'data/sample_multiple_label.txt', and make sure format as below:
 
-format:
-
 'word1 word2 word3 __label__l1 __label__l2 __label__l3'
  
-where part1:'word1 word2 word3' is input(X), part2:'__label__l1 __label__l2 __label__l3' representing there are three labels: [l1,l2,l3]. between part1 and part2 there should be a empty string: ' '.
+where part1: 'word1 word2 word3' is input(X), part2: '__label__l1 __label__l2 __label__l3' 
 
-for example:
+representing there are three labels: [l1,l2,l3]. between part1 and part2 there should be a empty string: ' '.
 
-[multiple labels] each line  like: 
+for example: each line (multiple labels) like: 
 
 'w5466 w138990 w1638 w4301 w6 w470 w202 c1834 c1400 c134 c57 c73 c699 c317 c184 __label__5626661657638885119 __label__4921793805334628695 __label__8904735555009151318'
 
@@ -132,11 +130,10 @@ where '5626661657638885119','4921793805334628695'，‘8904735555009151318’ ar
 
 Notice:
 
-([single label]: input as "x1 x2 x3 x4 x5 __label__323434" where 'x1,x2' is words, '323434' is label)
 
-Some util function is in data_util.py; 
+Some util function is in data_util.py;  check load_data_multilabel() of data_util for how process input and labels from raw data.
 
-it has a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
+there is a function to load and assign pretrained word embedding to the model,where word embedding is pretrained in word2vec or fastText. 
 
 Pretrain Work Embedding:
 -------------------------------------------------------------------------------------------------------
