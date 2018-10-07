@@ -368,7 +368,7 @@ we do it in parallell style.layer normalization,residual connection, and mask ar
 
 For every building blocks, we include a test function in the each file below, and we've test each small piece successfully.
 
-Sequence to sequence with attention is a typical model to solve sequence generation problem, such as translate, dialogue system. most of time, it use RNN as buidling block to do these tasks. util recently, people also apply convolutional Neural Network for sequence to sequence problem. Transformer, however, it perform these tasks solely on attention mechansim. it is fast and acheive new state-of-art result.
+Sequence to sequence with attention is a typical model to solve sequence generation problem, such as translate, dialogue system. most of time, it use RNN as buidling block to do these tasks. util recently, people also apply convolutional Neural Network for sequence to sequence problem. Transformer, however, it perform these tasks solely on attention mechansim. it is fast and achieve new state-of-art result.
 
 ![alt text](https://github.com/brightmart/text_classification/blob/master/images/attention_is_all_you_need.JPG)
 
