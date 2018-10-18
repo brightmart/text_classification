@@ -42,13 +42,18 @@ class PositionWiseFeedFoward(object): #TODO make it parallel
         input=tf.expand_dims(self.x,axis=3) #[batch,sequence_length,d_model,1]
         # conv2d.input:       [None,sentence_length,embed_size,1]. filter=[filter_size,self.embed_size,1,self.num_filters]
         # output with padding:[None,sentence_length,1,1]
-        filter1 = tf.get_variable("filter1"+str(self.layer_index) , shape=[1, self.d_model, 1, 1],initializer=self.initializer)
-        ouput_conv1=tf.nn.conv2d(input,filter1,strides=[1,1,1,1],padding="VALID",name="conv1") #[batch,sequence_length,1,1]
-        print("output_conv1:",ouput_conv1)
+        output_conv1=tf.layers.conv2d(
+            input,filters=self.d_ff,kernel_size=[1,self.d_model],padding="VALID",
+            name='conv1',kernel_initializer=self.initializer,activation=tf.nn.relu
+        )
+        output_conv1 = tf.transpose(output_conv1, [0,1,3,2])
+        print("output_conv1:",output_conv1)
 
         #2.conv2
-        filter2 = tf.get_variable("filter2"+str(self.layer_index), [1, 1, 1, self.d_model], initializer=self.initializer)
-        output_conv2=tf.nn.conv2d(ouput_conv1,filter2,strides=[1,1,1,1],padding="VALID",name="conv2") #[batch,sequence_length,1,d_model]
+        output_conv2 = tf.layers.conv2d(
+            output_conv1,filters=self.d_model,kernel_size=[1,self.d_ff],padding="VALID",
+            name='conv2',kernel_initializer=self.initializer,activation=None
+        )
         output=tf.squeeze(output_conv2) #[batch,sequence_length,d_model]
         return output #[batch,sequence_length,d_model]
 
