@@ -4,12 +4,9 @@ the purpose of this repository is to explore text classification methods in NLP 
 
 UPDATE: 
 
-1. <a href='https://github.com/brightmart/ai_law'>
-    Apply AI in law cases task(AI_LAW): Predict the name of crimes(accusations), relevant-articles given facts of law cases</a>, has been released 
+1. <a href='https://github.com/brightmart/bert_language_understanding'>repository of Pre-training of Deep Bidirectional Transformers for Language Understanding is started, use Transformer to do multi-label classification is done.</a>
 
-2. <a href='https://github.com/brightmart/nlu_sim'>sentence similarity project has been released</a> you can check it if you like.
-
-3. if you want to try a model now, you can go to folder 'a02_TextCNN', run 'python -u p7_TextCNN_train.py', it will use sample data to train a model, and print loss and F1 score periodically.
+2. if you want to try a model now, you can go to folder 'a02_TextCNN', run 'python -u p7_TextCNN_train.py', it will use sample data to train a model, and print loss and F1 score periodically.
 
 it has all kinds of baseline models for text classificaiton.
 
