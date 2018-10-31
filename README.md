@@ -4,7 +4,7 @@ the purpose of this repository is to explore text classification methods in NLP 
 
 UPDATE: 
 
-1. <a href='https://github.com/brightmart/bert_language_understanding'>Googel's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then fine-tuning. check BERT for language understanding here with running code and data.</a>
+1. <a href='https://github.com/brightmart/bert_language_understanding'>Googel's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then fine-tuning. check BERT for language understanding here with running code and data set</a>
 
 2. if you want to try a model now, you can go to folder 'a02_TextCNN', run 'python -u p7_TextCNN_train.py', it will use sample data to train a model, and print loss and F1 score periodically.
 
