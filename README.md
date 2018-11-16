@@ -484,7 +484,7 @@ Detail:
 4.Answer Module:
 take the final epsoidic memory, question, it update hidden state of answer module.
 
-13.BERT:Pre-training of Deep Bidirectional Transformers for Language Understanding 
+13.BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding 
 -------------------------------------------------------------------------
 BERT currently achieve state of art results on more than 10 NLP tasks. the key ideas behind this model is that we can 
 
@@ -643,6 +643,8 @@ Reference:
 11.Ensemble Selection from Libraries of Models
 
 12.<a href='https://arxiv.org/abs/1810.04805'>BERT:Pre-training of Deep Bidirectional Transformers for Language Understanding</a>
+
+13.<a href='https://github.com/google-research/bert'>google-research/bert</a>
 
 -------------------------------------------------------------------------
 
