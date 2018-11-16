@@ -138,7 +138,8 @@ def multi_head_attention_for_sentence_vectorized(layer_number):
     with tf.variable_scope("query_at_each_sentence"+str(layer_number)):
         Q = embedded_words  # [batch_size*sequence_length,embed_size]
         K_s=embedded_words #[batch_size*sequence_length,embed_size]
-        V_s=tf.get_variable("V_s_original_", shape=embedded_words.get_shape().as_list(),initializer=initializer) #[batch_size,sequence_length,embed_size]
+        #V_s=tf.get_variable("V_s_original_", shape=embedded_words.get_shape().as_list(),initializer=initializer) #[batch_size,sequence_length,embed_size]
+        V_s=K_s
         # 3.call method to get result
         multi_head_attention_class = MultiHeadAttention(Q, K_s, V_s, d_model, d_k, d_v, sequence_length, h,type='decoder',mask=mask)
         encoder_output=multi_head_attention_class.multi_head_attention_fn() #shape:[sequence_length,d_model]

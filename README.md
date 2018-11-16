@@ -46,8 +46,9 @@ Models:
 7) Transformer("Attend Is All You Need")
 8) Dynamic Memory Network
 9) EntityNetwork:tracking state of the world
-10) Ensemble models
-11) Boosting: 
+10) Bert: Pre-training of Deep Bidirectional Transformers for Language Understanding
+11) Ensemble models
+12) Boosting: 
 
     for a single model, stack identical models together. each layer is a model. the result will be based on logits added together. the only connection between layers are label's weights. the front layer's prediction error rate of each label will become weight for the next layers. those labels with high error rate will have big weight. so later layer's will pay more attention to those mis-predicted labels, and try to fix previous mistake of former layer. as a result, we will get a much strong model.
     check a00_boosting/boosting.py
@@ -483,6 +484,108 @@ Detail:
 4.Answer Module:
 take the final epsoidic memory, question, it update hidden state of answer module.
 
+13.BERT:Pre-training of Deep Bidirectional Transformers for Language Understanding 
+-------------------------------------------------------------------------
+BERT currently achieve state of art results on more than 10 NLP tasks. the key ideas behind this model is that we can 
+
+pre-train the model by using one kind of language model with huge amount of raw data, where you can find it easily.
+
+as most of parameters of the model is pre-trained, only last layer for classifier need to be need for different tasks.
+
+as a result, this model is generic and very powerful. you can just fine-tuning based on the pre-trained model within
+ 
+a short period of time.
+ 
+however, this model is quite big. with sequence length 128, you may only able to train with a batch size of 32; for long
+
+document such as sequence length 512, it can only train a batch size 4 for a normal GPU(with 11G); and very few people
+
+can pre-train this model from scratch, as it takes many days or weeks to train, and a normal GPU's memory is too small 
+
+for this model.
+
+Specially, the backbone model is Transformer, where you can find it in Attention Is All You Need. it use two kind of 
+
+tasks to pre-train the model.
+
+#### Masked Languge Model
+generally speaking, given a sentence, some percentage of words are masked, you will need to predict the masked words
+
+based on this masked sentence. masked words are chosed randomly.
+
+we feed the input through a deep Transformer encoder and then use the final hidden states corresponding to the masked 
+
+positions to predict what word was masked, exactly like we would train a language model.
+
+    source_file each line is a sequence of token, can be a sentence.
+    
+    Input Sequence  : The man went to [MASK] store with [MASK] dog
+    Target Sequence :                  the                his
+         
+
+#### Next Sentence Prediction
+many language understanding task, like question answering, inference, need understand relationship
+  
+between sentence. however, language model is only able to understand without a sentence. next sentence
+
+prediction is a sample task to help model understand better in these kinds of task.
+
+50% of chance the second sentence is tbe next sentence of the first one, 50% of not the next one.
+
+given two sentence, the model is asked to predict whether the second sentence is real next sentence of 
+
+the first one.
+  
+    Input : [CLS] the man went to the store [SEP] he bought a gallon of milk [SEP]
+    Label : IsNext
+
+    Input = [CLS] the man heading to the store [SEP] penguin [MASK] are flight ##less birds [SEP]
+    Label = NotNext
+    
+#### How to use BERT?
+
+basically, you can download pre-trained model, can just fine-tuning on your task with your own data.
+
+for classification task, you can add processor to define the format you want to let input and labels from source data.
+
+#### Use BERT for multi-label classification?
+
+you need to change a few things, including:
+ 
+ 1) loss function under create_model in run_classifier.py
+ 
+ 2) many codes assume label is single value, not a list. you need to change it.
+ 
+you can run multi-label classification with downloadable data using BERT from 
+
+<a href='https://github.com/brightmart/sentiment_analysis_fine_grain'>sentiment_analysis_fine_grain with BERT</a>
+ 
+#### Use BERT for online prediction 
+
+you can use session and feed style to restore model and feed data, then get logits to make a online prediction.
+
+<a href='https://github.com/brightmart/sentiment_analysis_fine_grain'>online prediction with BERT</a>
+
+originally, it train or evaluate model based on file, not for online.
+
+#### How to get better model for BERT?
+
+firstly, you can use pre-trained model download from google. run a few epoch on you dataset, and find a suitable 
+
+sequence length.
+
+secondly, you can pre-train the base model in your own data as long as  you can find a dataset that is related to 
+
+your task, then fine-tuning on your specific task.
+
+thirdly, you can change loss function and last layer to better suit for your task.
+
+additionally, you can add define some pre-trained tasks that will help the model understand your task much better.
+
+as experienced we got from experiments, pre-trained task is independent from model and pre-train is not limit to 
+
+the tasks above.
+
 -------------------------------------------------------------------------
 
 TODO 
@@ -539,6 +642,7 @@ Reference:
 
 11.Ensemble Selection from Libraries of Models
 
+12.<a href='https://arxiv.org/abs/1810.04805'>BERT:Pre-training of Deep Bidirectional Transformers for Language Understanding</a>
 
 -------------------------------------------------------------------------
 

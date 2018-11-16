@@ -54,7 +54,8 @@ class BaseClass(object):
             #length=self.decoder_sent_length if (type!='encoder' and self.sequence_length!=self.decoder_sent_length) else self.sequence_length #TODO this may be useful
             length=self.sequence_length
             #1. get V as learned parameters
-            V_s = tf.get_variable("V_s", shape=(self.batch_size,length,self.d_model),initializer=self.initializer)
+            #V_s = tf.get_variable("V_s", shape=(self.batch_size,length,self.d_model),initializer=self.initializer) # REMOVED 2018.11.16
+            V_s=K
             #2. call function of multi head attention to get result
             multi_head_attention_class = MultiHeadAttention(Q, K_s, V_s, self.d_model, self.d_k, self.d_v, self.sequence_length,
                                                             self.h,type=type,is_training=is_training,mask=mask,dropout_rate=(1.0-dropout_keep_prob))
