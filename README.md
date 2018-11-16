@@ -542,6 +542,11 @@ the first one.
     Input = [CLS] the man heading to the store [SEP] penguin [MASK] are flight ##less birds [SEP]
     Label = NotNext
     
+<img src="https://github.com/brightmart/text_classification/blob/master/images/bert_1.jpeg"  width="65%" height="65%" />
+
+<img src="https://github.com/brightmart/text_classification/blob/master/images/bert_2.jpeg"  width="65%" height="65%" />
+
+
 #### How to use BERT?
 
 basically, you can download pre-trained model, can just fine-tuning on your task with your own data.
