@@ -2,35 +2,87 @@ Text Classification
 -------------------------------------------------------------------------
 the purpose of this repository is to explore text classification methods in NLP with deep learning.
 
-UPDATE: 
+##### Update: 
 
-1. <a href='https://github.com/brightmart/bert_language_understanding'>Googel's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then fine-tuning. check BERT for language understanding here with running code and data set</a>
+1. <a href='https://github.com/brightmart/bert_language_understanding'>Google's BERT achieved new state of art result on 
 
-2. if you want to try a model now, you can go to folder 'a02_TextCNN', run 'python -u p7_TextCNN_train.py', it will use sample data to train a model, and print loss and F1 score periodically.
+more than 10 tasks in NLP using pre-train in language model then fine-tuning. check BERT for language understanding here
+ 
+with running code and data set</a>
 
-it has all kinds of baseline models for text classificaiton.
+2. if you want to try a model now, you can go to folder 'a02_TextCNN', run 'python -u p7_TextCNN_train.py', it will use
+ 
+sample data to train a model, and print loss and F1 score periodically.
 
-it also support for multi-label classification where multi label associate with an sentence or document.
+##### Introduction
+it has all kinds of baseline models for text classification.
 
-although many of these models are simple, and may not get you to top level of the task.but some of these models are very classic, so they may be good to serve as baseline models.
+it also support for multi-label classification where multi labels associate with an sentence or document.
 
-each model has a test function under model class. you can run it to performance toy task first. the model is indenpendent from dataset.
+although many of these models are simple, and may not get you to top level of the task. but some of these models are very 
 
-<a href='https://github.com/brightmart/text_classification/blob/master/multi-label-classification.pdf'>check here for formal report of large scale multi-label text classification with deep learning</a>
+classic, so they may be good to serve as baseline models. each model has a test function under model class. you can run 
 
-serveral modes here can also be used for modelling question answering (with or without context), or to do sequences generating. 
+it to performance toy task first. the model is independent from dataset.
 
-we explore two seq2seq model(seq2seq with attention,transformer-attention is all you need) to do text classification. and these two models can also be used for sequences generating and other tasks. if you task is a multi-label classification, you can cast the problem to sequences generating.
+<a href='https://github.com/brightmart/text_classification/blob/master/multi-label-classification.pdf'>check here for 
 
-we implement two memory network. one is dynamic memory network. previously it reached state of art in question answering, sentiment analysis and sequence generating tasks. it is so called one model to do serveral different tasks, and reach high performance. it has four modules. the key component is episodic memory module. it use gate mechanism to performance attention, and use gated-gru to update episode memory, then it has another gru( in a vertical direction) to pefromance hidden state update. it has ability to do transitive inference.
+formal report of large scale multi-label text classification with deep learning</a>
 
-the second memory network we implemented is recurrent entity network: tracking state of the world. it has blocks of key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task. 
+several models here can also be used for modelling question answering (with or without context), or to do sequences generating. 
 
-if you need some sample data and word embedding pertrained on word2vec, you can find it in closed issues, such as:<a href="https://github.com/brightmart/text_classification/issues/3">issue 3</a>. 
+we explore two seq2seq model(seq2seq with attention,transformer-attention is all you need) to do text classification. 
 
-you can also find some sample data at folder "data". it contains two files:'sample_single_label.txt', contains 50k data with single label; 'sample_multiple_label.txt', contains 20k data with multiple labels. input and label of is separate by "   __label__".
+and these two models can also be used for sequences generating and other tasks. if your task is a multi-label classification, 
 
-if you want to know more detail about dataset of text classification or task these models can be used, one of choose is below:
+you can cast the problem to sequences generating.
+
+we implement two memory network. one is dynamic memory network. previously it reached state of art in question answering, 
+
+sentiment analysis and sequence generating tasks. it is so called one model to do several different tasks, and reach 
+
+high performance. it has four modules. the key component is episodic memory module. it use gate mechanism to performance
+ 
+attention, and use gated-gru to update episode memory, then it has another gru( in a vertical direction) to performance 
+
+hidden state update. it has ability to do transitive inference.
+
+the second memory network we implemented is recurrent entity network: tracking state of the world. it has blocks of 
+
+key-value pairs as memory, run in parallel, which achieve new state of art. it can be used for modelling question 
+
+answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a 
+
+question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task. 
+
+##### Sample data <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>Cached File</a>
+
+to help you run this repository, currently we re-generate training/validation/test data and vocabulary/labels, 
+
+and saved them as cache file using h5py. 
+
+it contain everything you need to run this repository: data is pre-processed, you can start to train the model in a minute.
+  
+it's a zip file about 1.8G, contains 3 million training data. although after unzip it's quite big, but with the help of 
+
+hdf5, it only need a normal size of memory of computer(e.g. 8 G or less) during training.
+
+we use jupyter notebook(pre-processing.ipynb) to pre-process data. you can have a better understanding of this task and 
+
+data by taking a look of it. you can also generate data by yourself in the way your want, just change few lines of code 
+
+using this jupyter notebook.
+
+old sample data source:
+if you need some sample data and word embedding per-trained on word2vec, you can find it in closed issues, such as:
+
+<a href="https://github.com/brightmart/text_classification/issues/3">issue 3</a>. 
+
+you can also find some sample data at folder "data". it contains two files:'sample_single_label.txt', contains 50k data 
+
+with single label; 'sample_multiple_label.txt', contains 20k data with multiple labels. input and label of is separate by "   __label__".
+
+if you want to know more detail about data set of text classification or task these models can be used, one of choose is below:
 https://biendata.com/competition/zhihu/
 
 

@@ -10,21 +10,26 @@
 import tensorflow as tf
 import numpy as np
 from p7_TextCNN_model import TextCNN
-from data_util import create_vocabulary,load_data_multilabel
+#from data_util import create_vocabulary,load_data_multilabel
+import pickle
+import h5py
 import os
 import random
 #configuration
 FLAGS=tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string("traning_data_path","../data/sample_multiple_label.txt","path of traning data.") #../data/sample_multiple_label.txt
-tf.app.flags.DEFINE_integer("vocab_size",100000,"maximum vocab size.")
+#tf.app.flags.DEFINE_string("traning_data_path","../data/sample_multiple_label.txt","path of traning data.") #../data/sample_multiple_label.txt
+#tf.app.flags.DEFINE_integer("vocab_size",100000,"maximum vocab size.")
+
+tf.app.flags.DEFINE_string("cache_file_h5py","../data/ieee_zhihu_cup/data.h5","path of training/validation/test data.") #../data/sample_multiple_label.txt
+tf.app.flags.DEFINE_string("cache_file_pickle","../data/ieee_zhihu_cup/vocab_label.pik","path of vocabulary and label files") #../data/sample_multiple_label.txt
 
 tf.app.flags.DEFINE_float("learning_rate",0.0003,"learning rate")
 tf.app.flags.DEFINE_integer("batch_size", 64, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_integer("decay_steps", 1000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
 tf.app.flags.DEFINE_float("decay_rate", 1.0, "Rate of decay for learning rate.") #0.65一次衰减多少
 tf.app.flags.DEFINE_string("ckpt_dir","text_cnn_title_desc_checkpoint/","checkpoint location for the model")
-tf.app.flags.DEFINE_integer("sentence_len",100,"max sentence length")
+tf.app.flags.DEFINE_integer("sentence_len",200,"max sentence length")
 tf.app.flags.DEFINE_integer("embed_size",128,"embedding size")
 tf.app.flags.DEFINE_boolean("is_training",True,"is traning.true:tranining,false:testing/inference")
 tf.app.flags.DEFINE_integer("num_epochs",10,"number of epochs to run.")
@@ -38,16 +43,17 @@ filter_sizes=[6,7,8]
 
 #1.load data(X:list of lint,y:int). 2.create session. 3.feed data. 4.training (5.validation) ,(6.prediction)
 def main(_):
-    trainX, trainY, testX, testY = None, None, None, None
-    vocabulary_word2index, vocabulary_index2word, vocabulary_label2index, vocabulary_index2label= create_vocabulary(FLAGS.traning_data_path,FLAGS.vocab_size,name_scope=FLAGS.name_scope)
-    vocab_size = len(vocabulary_word2index);print("cnn_model.vocab_size:",vocab_size);num_classes=len(vocabulary_index2label);print("num_classes:",num_classes)
-    train, test= load_data_multilabel(FLAGS.traning_data_path,vocabulary_word2index, vocabulary_label2index,FLAGS.sentence_len)
-    trainX, trainY = train
-    testX, testY = test
+    #trainX, trainY, testX, testY = None, None, None, None
+    #vocabulary_word2index, vocabulary_index2word, vocabulary_label2index, _= create_vocabulary(FLAGS.traning_data_path,FLAGS.vocab_size,name_scope=FLAGS.name_scope)
+    word2index, label2index, trainX, trainY, vaildX, vaildY, testX, testY=load_data(FLAGS.cache_file_h5py, FLAGS.cache_file_pickle)
+    vocab_size = len(word2index);print("cnn_model.vocab_size:",vocab_size);num_classes=len(label2index);print("num_classes:",num_classes)
+    num_examples,FLAGS.sentence_len=trainX.shape
+    print("num_examples of training:",num_examples,";sentence_len:",FLAGS.sentence_len)
+    #train, test= load_data_multilabel(FLAGS.traning_data_path,vocabulary_word2index, vocabulary_label2index,FLAGS.sentence_len)
+    #trainX, trainY = train;testX, testY = test
     #print some message for debug purpose
-    print("length of training data:",len(trainX),";length of validation data:",len(testX))
-    print("trainX[0]:", trainX[0]);
-    print("trainY[0]:", trainY[0])
+    print("trainX[0:10]:", trainX[0:10])
+    print("trainY[0]:", trainY[0:10])
     train_y_short = get_target_label_short(trainY[0])
     print("train_y_short:", train_y_short)
 
@@ -70,7 +76,8 @@ def main(_):
             print('Initializing Variables')
             sess.run(tf.global_variables_initializer())
             if FLAGS.use_embedding: #load pre-trained word embedding
-                assign_pretrained_word_embedding(sess, vocabulary_index2word, vocab_size, textCNN,FLAGS.word2vec_model_path)
+                index2word={v:k for k,v in word2index.items()}
+                assign_pretrained_word_embedding(sess, index2word, vocab_size, textCNN,FLAGS.word2vec_model_path)
         curr_epoch=sess.run(textCNN.epoch_step)
         #3.feed data & training
         number_of_training_data=len(trainX)
@@ -94,7 +101,7 @@ def main(_):
 
                 ########################################################################################################
                 if start%(1000*FLAGS.batch_size)==0: # eval every 3000 steps.
-                    eval_loss, f1_score = do_eval(sess, textCNN, testX, testY,iteration,num_classes)
+                    eval_loss, f1_score = do_eval(sess, textCNN, vaildX, vaildY,iteration,num_classes)
                     print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f" % (epoch, eval_loss, f1_score))
                     # save model to checkpoint
                     save_path = FLAGS.ckpt_dir + "model.ckpt"
@@ -172,7 +179,7 @@ def compute_f1_score_removed(label_list_top5,eval_y):
     f1_score=2.0*p_5*r_5/(p_5+r_5+0.000001)
     return f1_score,p_5,r_5
 
-random_number=300
+random_number=2000
 def compute_confuse_matrix(target_y,predict_y,label_dict,name='default'):
     """
     compute true postive(TP), false postive(FP), false negative(FN) given target lable and predict label
@@ -344,6 +351,37 @@ def assign_pretrained_word_embedding(sess,vocabulary_index2word,vocab_size,textC
     print("word. exists embedding:", count_exist, " ;word not exist embedding:", count_not_exist)
     print("using pre-trained word emebedding.ended...")
 
+def load_data(cache_file_h5py,cache_file_pickle):
+    """
+    load data from h5py and pickle cache files, which is generate by take step by step of pre-processing.ipynb
+    :param cache_file_h5py:
+    :param cache_file_pickle:
+    :return:
+    """
+    if not os.path.exists(cache_file_h5py) or not os.path.exists(cache_file_pickle):
+        raise RuntimeError("############################ERROR##############################\n. "
+                           "please download cache file, it include training data and vocabulary & labels. "
+                           "link can be found in README.md\n download zip file, unzip it, then put cache files as FLAGS."
+                           "cache_file_h5py and FLAGS.cache_file_pickle suggested location.")
+    print("INFO. cache file exists. going to load cache file")
+    f_data = h5py.File(cache_file_h5py, 'r')
+    print("f_data.keys:",list(f_data.keys()))
+    train_X=f_data['train_X'] # np.array(
+    print("train_X.shape:",train_X.shape)
+    train_Y=f_data['train_Y'] # np.array(
+    print("train_Y.shape:",train_Y.shape,";")
+    vaild_X=f_data['vaild_X'] # np.array(
+    valid_Y=f_data['valid_Y'] # np.array(
+    test_X=f_data['test_X'] # np.array(
+    test_Y=f_data['test_Y'] # np.array(
+    #print(train_X)
+    #f_data.close()
+
+    word2index, label2index=None,None
+    with open(cache_file_pickle, 'rb') as data_f_pickle:
+        word2index, label2index=pickle.load(data_f_pickle)
+    print("INFO. cache file load successful...")
+    return word2index, label2index,train_X,train_Y,vaild_X,valid_Y,test_X,test_Y
 
 if __name__ == "__main__":
     tf.app.run()

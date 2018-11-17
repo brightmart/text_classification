@@ -38,6 +38,8 @@ def load_data_multilabel(traning_data_path,vocab_word2index, vocab_label2index,s
         y=transform_multilabel_as_multihot(label_list,label_size)
         X.append(x)
         Y.append(y)
+        if i<10:print(i,"line:",line)
+
     X = pad_sequences(X, maxlen=sentence_len, value=0.)  # padding to max length
     number_examples = len(lines)
     training_number=int(training_portion* number_examples)
