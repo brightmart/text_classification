@@ -50,11 +50,11 @@ question(as query), then ask the model to predict an answer; if you feed story s
 
 classification task. 
 
-#### Sample data <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>Cached File</a>
+#### Sample data: <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>cached file </a>
 
 to help you run this repository, currently we re-generate training/validation/test data and vocabulary/labels, and saved 
 
-them as cache file using h5py. 
+them as cache file using h5py. we suggest you to download it from above link.
 
 it contain everything you need to run this repository: data is pre-processed, you can start to train the model in a minute.
   
