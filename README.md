@@ -62,7 +62,7 @@ it's a zip file about 1.8G, contains 3 million training data. although after unz
 
 hdf5, it only need a normal size of memory of computer(e.g. 8 G or less) during training.
 
-we use jupyter notebook(pre-processing.ipynb) to pre-process data. you can have a better understanding of this task and 
+we use jupyter notebook: <a href='https://github.com/brightmart/text_classification/blob/master/pre-processing.ipynb'>pre-processing.ipynb</a> to pre-process data. you can have a better understanding of this task and 
 
 data by taking a look of it. you can also generate data by yourself in the way your want, just change few lines of code 
 
