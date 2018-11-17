@@ -2,19 +2,16 @@ Text Classification
 -------------------------------------------------------------------------
 the purpose of this repository is to explore text classification methods in NLP with deep learning.
 
-##### Update: 
+#### Update: 
 
-1. <a href='https://github.com/brightmart/bert_language_understanding'>Google's BERT achieved new state of art result on 
+1. Google's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then 
 
-more than 10 tasks in NLP using pre-train in language model then fine-tuning. check BERT for language understanding here
- 
-with running code and data set</a>
+fine-tuning. <a href='https://github.com/brightmart/bert_language_understanding'>Pre-train TexCNN: idea from BERT for 
 
-2. if you want to try a model now, you can go to folder 'a02_TextCNN', run 'python -u p7_TextCNN_train.py', it will use
- 
-sample data to train a model, and print loss and F1 score periodically.
+language understanding with running code and data set</a>
 
-##### Introduction
+
+#### Introduction
 it has all kinds of baseline models for text classification.
 
 it also support for multi-label classification where multi labels associate with an sentence or document.
@@ -55,7 +52,7 @@ answering with contexts(or history). for example, you can let the model to read 
 
 question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task. 
 
-##### Sample data <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>Cached File</a>
+#### Sample data <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>Cached File</a>
 
 to help you run this repository, currently we re-generate training/validation/test data and vocabulary/labels, 
 
@@ -73,6 +70,12 @@ data by taking a look of it. you can also generate data by yourself in the way y
 
 using this jupyter notebook.
 
+If you want to try a model now, you can dowload cached file from above, then go to folder 'a02_TextCNN', run 
+        
+     python  p7_TextCNN_train.py 
+   
+it will use data from cached files to train the model, and print loss and F1 score periodically.
+
 old sample data source:
 if you need some sample data and word embedding per-trained on word2vec, you can find it in closed issues, such as:
 
@@ -83,6 +86,7 @@ you can also find some sample data at folder "data". it contains two files:'samp
 with single label; 'sample_multiple_label.txt', contains 20k data with multiple labels. input and label of is separate by "   __label__".
 
 if you want to know more detail about data set of text classification or task these models can be used, one of choose is below:
+
 https://biendata.com/competition/zhihu/
 
 
