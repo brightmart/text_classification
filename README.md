@@ -4,11 +4,9 @@ the purpose of this repository is to explore text classification methods in NLP 
 
 #### Update: 
 
-1. Google's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then 
+Google's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then 
 
-fine-tuning. <a href='https://github.com/brightmart/bert_language_understanding'>Pre-train TexCNN: idea from BERT for 
-
-language understanding with running code and data set</a>
+fine-tuning. <a href='https://github.com/brightmart/bert_language_understanding'>Pre-train TexCNN: idea from BERT for language understanding with running code and data set</a>
 
 
 #### Introduction
@@ -20,11 +18,9 @@ although many of these models are simple, and may not get you to top level of th
 
 classic, so they may be good to serve as baseline models. each model has a test function under model class. you can run 
 
-it to performance toy task first. the model is independent from dataset.
+it to performance toy task first. the model is independent from data set.
 
-<a href='https://github.com/brightmart/text_classification/blob/master/multi-label-classification.pdf'>check here for 
-
-formal report of large scale multi-label text classification with deep learning</a>
+<a href='https://github.com/brightmart/text_classification/blob/master/multi-label-classification.pdf'>check here for formal report of large scale multi-label text classification with deep learning</a>
 
 several models here can also be used for modelling question answering (with or without context), or to do sequences generating. 
 
@@ -34,15 +30,15 @@ and these two models can also be used for sequences generating and other tasks. 
 
 you can cast the problem to sequences generating.
 
-we implement two memory network. one is dynamic memory network. previously it reached state of art in question answering, 
+we implement two memory network. one is dynamic memory network. previously it reached state of art in question 
 
-sentiment analysis and sequence generating tasks. it is so called one model to do several different tasks, and reach 
+answering, sentiment analysis and sequence generating tasks. it is so called one model to do several different tasks, 
 
-high performance. it has four modules. the key component is episodic memory module. it use gate mechanism to performance
- 
-attention, and use gated-gru to update episode memory, then it has another gru( in a vertical direction) to performance 
+and reach high performance. it has four modules. the key component is episodic memory module. it use gate mechanism to 
 
-hidden state update. it has ability to do transitive inference.
+performance attention, and use gated-gru to update episode memory, then it has another gru( in a vertical direction) to 
+
+performance hidden state update. it has ability to do transitive inference.
 
 the second memory network we implemented is recurrent entity network: tracking state of the world. it has blocks of 
 
@@ -50,13 +46,15 @@ key-value pairs as memory, run in parallel, which achieve new state of art. it c
 
 answering with contexts(or history). for example, you can let the model to read some sentences(as context), and ask a 
 
-question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do classification task. 
+question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do 
+
+classification task. 
 
 #### Sample data <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>Cached File</a>
 
-to help you run this repository, currently we re-generate training/validation/test data and vocabulary/labels, 
+to help you run this repository, currently we re-generate training/validation/test data and vocabulary/labels, and saved 
 
-and saved them as cache file using h5py. 
+them as cache file using h5py. 
 
 it contain everything you need to run this repository: data is pre-processed, you can start to train the model in a minute.
   
@@ -77,9 +75,7 @@ If you want to try a model now, you can dowload cached file from above, then go 
 it will use data from cached files to train the model, and print loss and F1 score periodically.
 
 old sample data source:
-if you need some sample data and word embedding per-trained on word2vec, you can find it in closed issues, such as:
-
-<a href="https://github.com/brightmart/text_classification/issues/3">issue 3</a>. 
+if you need some sample data and word embedding per-trained on word2vec, you can find it in closed issues, such as: <a href="https://github.com/brightmart/text_classification/issues/3">issue 3</a>. 
 
 you can also find some sample data at folder "data". it contains two files:'sample_single_label.txt', contains 50k data 
 
