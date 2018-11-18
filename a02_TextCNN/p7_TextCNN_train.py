@@ -122,15 +122,15 @@ def main(_):
                 saver.save(sess,save_path,global_step=epoch)
 
         # 5.最后在测试集上做测试，并报告测试准确率 Test
-        test_loss,f1_score = do_eval(sess, textCNN, testX, testY,iteration,num_classes)
+        test_loss,f1_score = do_eval(sess, textCNN, testX, testY,num_classes)
         print("Test Loss:%.3f" % ( test_loss))
     pass
 
 
 # 在验证集上做验证，报告损失、精确度
 def do_eval(sess,textCNN,evalX,evalY,num_classes):
-    evalX=evalX[0:8000]
-    evalY=evalY[0:8000]
+    evalX=evalX[0:3000]
+    evalY=evalY[0:3000]
     number_examples=len(evalX)
     eval_loss,eval_counter,eval_f1_score,eval_p,eval_r=0.0,0,0.0,0.0,0.0
     batch_size=1
@@ -299,9 +299,12 @@ def get_target_label_short(eval_y):
 
 #get top5 predicted labels
 def get_label_using_logits(logits,top_number=5):
-    index_list=np.argsort(logits)[-top_number:]
-    index_list=index_list[::-1]
-    return index_list
+    # index_list=np.argsort(logits)[-top_number:]
+    #vindex_list=index_list[::-1]
+    y_predict_labels = [i for i in range(len(logits)) if logits[i] >= 0.50]  # TODO 0.5PW e.g.[2,12,13,10]
+    if len(y_predict_labels) < 1: y_predict_labels = [np.argmax(logits)]
+
+    return y_predict_labels
 
 #统计预测的准确率
 def calculate_accuracy(labels_predicted, labels,eval_counter):

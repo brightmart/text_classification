@@ -31,6 +31,7 @@ class TextCNN:
         self.dropout_keep_prob=tf.placeholder(tf.float32,name="dropout_keep_prob")
         self.iter = tf.placeholder(tf.int32) #training iteration
         self.tst=tf.placeholder(tf.bool)
+        self.use_mulitple_layer_cnn=True
 
         self.global_step = tf.Variable(0, trainable=False, name="Global_Step")
         self.epoch_step=tf.Variable(0,trainable=False,name="Epoch_Step")
@@ -68,68 +69,92 @@ class TextCNN:
 
         # 2.=====>loop each filter size. for each filter, do:convolution-pooling layer(a.create filters,b.conv,c.apply nolinearity,d.max-pooling)--->
         # you can use:tf.nn.conv2d;tf.nn.relu;tf.nn.max_pool; feature shape is 4-d. feature is a new variable
-        pooled_outputs = []
-        for i,filter_size in enumerate(self.filter_sizes):
-            #with tf.name_scope("convolution-pooling-%s" %filter_size):
-            with tf.variable_scope( "convolution-pooling-%s" % filter_size):
+        #if self.use_mulitple_layer_cnn: # this may take 50G memory.
+        #    print("use multiple layer CNN")
+        #    h=self.cnn_multiple_layers()
+        #else: # this take small memory, less than 2G memory.
+        print("use single layer CNN")
+        h=self.cnn_single_layer()
+        #5. logits(use linear layer)and predictions(argmax)
+        with tf.name_scope("output"):
+            logits = tf.matmul(h,self.W_projection) + self.b_projection  #shape:[None, self.num_classes]==tf.matmul([None,self.embed_size],[self.embed_size,self.num_classes])
+        return logits
 
+    def cnn_single_layer(self):
+        pooled_outputs = []
+        for i, filter_size in enumerate(self.filter_sizes):
+            # with tf.name_scope("convolution-pooling-%s" %filter_size):
+            with tf.variable_scope("convolution-pooling-%s" % filter_size):
                 # ====>a.create filter
-                filter=tf.get_variable("filter-%s"%filter_size,[filter_size,self.embed_size,1,self.num_filters],initializer=self.initializer)
+                filter = tf.get_variable("filter-%s" % filter_size, [filter_size, self.embed_size, 1, self.num_filters],initializer=self.initializer)
                 # ====>b.conv operation: conv2d===>computes a 2-D convolution given 4-D `input` and `filter` tensors.
-                #Conv.Input: given an input tensor of shape `[batch, in_height, in_width, in_channels]` and a filter / kernel tensor of shape `[filter_height, filter_width, in_channels, out_channels]`
-                #Conv.Returns: A `Tensor`. Has the same type as `input`.
+                # Conv.Input: given an input tensor of shape `[batch, in_height, in_width, in_channels]` and a filter / kernel tensor of shape `[filter_height, filter_width, in_channels, out_channels]`
+                # Conv.Returns: A `Tensor`. Has the same type as `input`.
                 #         A 4-D tensor. The dimension order is determined by the value of `data_format`, see below for details.
-                #1)each filter with conv2d's output a shape:[1,sequence_length-filter_size+1,1,1];2)*num_filters--->[1,sequence_length-filter_size+1,1,num_filters];3)*batch_size--->[batch_size,sequence_length-filter_size+1,1,num_filters]
-                #input data format:NHWC:[batch, height, width, channels];output:4-D
-                conv=tf.nn.conv2d(self.sentence_embeddings_expanded, filter, strides=[1,1,1,1], padding="VALID",name="conv") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]
-                #conv,self.update_ema=self.batchnorm(conv,self.tst, self.iter, self.b1) # TODO remove it temp
-                conv=tf.contrib.layers.batch_norm(conv,is_training=self.is_training_flag,scope='cnn_bn_')
+                # 1)each filter with conv2d's output a shape:[1,sequence_length-filter_size+1,1,1];2)*num_filters--->[1,sequence_length-filter_size+1,1,num_filters];3)*batch_size--->[batch_size,sequence_length-filter_size+1,1,num_filters]
+                # input data format:NHWC:[batch, height, width, channels];output:4-D
+                conv = tf.nn.conv2d(self.sentence_embeddings_expanded, filter, strides=[1, 1, 1, 1], padding="VALID",name="conv")  # shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]
+                conv = tf.contrib.layers.batch_norm(conv, is_training=self.is_training_flag, scope='cnn_bn_')
 
                 # ====>c. apply nolinearity
-                b=tf.get_variable("b-%s"%filter_size,[self.num_filters]) #ADD 2017-06-09
-                h=tf.nn.relu(tf.nn.bias_add(conv,b),"relu") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]. tf.nn.bias_add:adds `bias` to `value`
+                b = tf.get_variable("b-%s" % filter_size, [self.num_filters])  # ADD 2017-06-09
+                h = tf.nn.relu(tf.nn.bias_add(conv, b),"relu")  # shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]. tf.nn.bias_add:adds `bias` to `value`
                 # ====>. max-pooling.  value: A 4-D `Tensor` with shape `[batch, height, width, channels]
                 #                  ksize: A list of ints that has length >= 4.  The size of the window for each dimension of the input tensor.
                 #                  strides: A list of ints that has length >= 4.  The stride of the sliding window for each dimension of the input tensor.
-                pooled=tf.nn.max_pool(h, ksize=[1,self.sequence_length-filter_size+1,1,1], strides=[1,1,1,1], padding='VALID',name="pool")#shape:[batch_size, 1, 1, num_filters].max_pool:performs the max pooling on the input.
+                pooled = tf.nn.max_pool(h, ksize=[1, self.sequence_length - filter_size + 1, 1, 1],strides=[1, 1, 1, 1], padding='VALID',name="pool")  # shape:[batch_size, 1, 1, num_filters].max_pool:performs the max pooling on the input.
                 pooled_outputs.append(pooled)
         # 3.=====>combine all pooled features, and flatten the feature.output' shape is a [1,None]
-        #e.g. >>> x1=tf.ones([3,3]);x2=tf.ones([3,3]);x=[x1,x2]
+        # e.g. >>> x1=tf.ones([3,3]);x2=tf.ones([3,3]);x=[x1,x2]
         #         x12_0=tf.concat(x,0)---->x12_0' shape:[6,3]
         #         x12_1=tf.concat(x,1)---->x12_1' shape;[3,6]
-        self.h_pool=tf.concat(pooled_outputs,3) #shape:[batch_size, 1, 1, num_filters_total]. tf.concat=>concatenates tensors along one dimension.where num_filters_total=num_filters_1+num_filters_2+num_filters_3
-        self.h_pool_flat=tf.reshape(self.h_pool,[-1,self.num_filters_total]) #shape should be:[None,num_filters_total]. here this operation has some result as tf.sequeeze().e.g. x's shape:[3,3];tf.reshape(-1,x) & (3, 3)---->(1,9)
+        self.h_pool = tf.concat(pooled_outputs,3)  # shape:[batch_size, 1, 1, num_filters_total]. tf.concat=>concatenates tensors along one dimension.where num_filters_total=num_filters_1+num_filters_2+num_filters_3
+        self.h_pool_flat = tf.reshape(self.h_pool, [-1,self.num_filters_total])  # shape should be:[None,num_filters_total]. here this operation has some result as tf.sequeeze().e.g. x's shape:[3,3];tf.reshape(-1,x) & (3, 3)---->(1,9)
 
-        #4.=====>add dropout: use tf.nn.dropout
+        # 4.=====>add dropout: use tf.nn.dropout
         with tf.name_scope("dropout"):
-            self.h_drop=tf.nn.dropout(self.h_pool_flat,keep_prob=self.dropout_keep_prob) #[None,num_filters_total]
-        self.h_drop=tf.layers.dense(self.h_drop,self.num_filters_total,activation=tf.nn.tanh,use_bias=True)
-        #5. logits(use linear layer)and predictions(argmax)
-        with tf.name_scope("output"):
-            logits = tf.matmul(self.h_drop,self.W_projection) + self.b_projection  #shape:[None, self.num_classes]==tf.matmul([None,self.embed_size],[self.embed_size,self.num_classes])
-        return logits
+            self.h_drop = tf.nn.dropout(self.h_pool_flat, keep_prob=self.dropout_keep_prob)  # [None,num_filters_total]
+        h = tf.layers.dense(self.h_drop, self.num_filters_total, activation=tf.nn.tanh, use_bias=True)
+        return h
 
-    def batchnorm(self,Ylogits, is_test, iteration, offset, convolutional=False): #check:https://github.com/martin-gorner/tensorflow-mnist-tutorial/blob/master/mnist_4.1_batchnorm_five_layers_relu.py#L89
-        """
-        batch normalization: keep moving average of mean and variance. use it as value for BN when training. when prediction, use value from that batch.
-        :param Ylogits:
-        :param is_test:
-        :param iteration:
-        :param offset:
-        :param convolutional:
-        :return:
-        """
-        exp_moving_avg = tf.train.ExponentialMovingAverage(0.999,iteration)  # adding the iteration prevents from averaging across non-existing iterations
-        bnepsilon = 1e-5
-        if convolutional:
-            mean, variance = tf.nn.moments(Ylogits, [0, 1, 2])
-        else:
-            mean, variance = tf.nn.moments(Ylogits, [0])
-        update_moving_averages = exp_moving_avg.apply([mean, variance])
-        m = tf.cond(is_test, lambda: exp_moving_avg.average(mean), lambda: mean)
-        v = tf.cond(is_test, lambda: exp_moving_avg.average(variance), lambda: variance)
-        Ybn = tf.nn.batch_normalization(Ylogits, m, v, offset, None, bnepsilon)
-        return Ybn, update_moving_averages
+    def cnn_multiple_layers(self):
+        # 2.=====>loop each filter size. for each filter, do:convolution-pooling layer(a.create filters,b.conv,c.apply nolinearity,d.max-pooling)--->
+        # you can use:tf.nn.conv2d;tf.nn.relu;tf.nn.max_pool; feature shape is 4-d. feature is a new variable
+        pooled_outputs = []
+        print("sentence_embeddings_expanded:",self.sentence_embeddings_expanded)
+        for i, filter_size in enumerate(self.filter_sizes):
+            with tf.variable_scope('cnn_multiple_layers' + "convolution-pooling-%s" % filter_size):
+                # 1) CNN->BN->relu
+                filter = tf.get_variable("filter-%s" % filter_size,[filter_size, self.embed_size, 1, self.num_filters],initializer=self.initializer)
+                conv = tf.nn.conv2d(self.sentence_embeddings_expanded, filter, strides=[1, 1, 1, 1],padding="SAME",name="conv")  # shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]
+                conv = tf.contrib.layers.batch_norm(conv, is_training=self.is_training_flag, scope='cnn1')
+                print(i, "conv1:", conv)
+                b = tf.get_variable("b-%s" % filter_size, [self.num_filters])  # ADD 2017-06-09
+                h = tf.nn.relu(tf.nn.bias_add(conv, b),"relu")  # shape:[batch_size,sequence_length,1,num_filters]. tf.nn.bias_add:adds `bias` to `value`
+
+                # 2) CNN->BN->relu
+                h = tf.reshape(h, [-1, self.sequence_length, self.num_filters,1])  # shape:[batch_size,sequence_length,num_filters,1]
+                # Layer2:CONV-RELU
+                filter2 = tf.get_variable("filter2-%s" % filter_size,[filter_size, self.num_filters, 1, self.num_filters],initializer=self.initializer)
+                conv2 = tf.nn.conv2d(h, filter2, strides=[1, 1, 1, 1], padding="SAME",name="conv2")  # shape:[batch_size,sequence_length-filter_size*2+2,1,num_filters]
+                conv2 = tf.contrib.layers.batch_norm(conv2, is_training=self.is_training_flag, scope='cnn2')
+                print(i, "conv2:", conv2)
+                b2 = tf.get_variable("b2-%s" % filter_size, [self.num_filters])  # ADD 2017-06-09
+                h = tf.nn.relu(tf.nn.bias_add(conv2, b2),"relu2")  # shape:[batch_size,sequence_length,1,num_filters]. tf.nn.bias_add:adds `bias` to `value`
+
+                # 3. Max-pooling
+                pooling_max = tf.squeeze(tf.nn.max_pool(h, ksize=[1,self.sequence_length, 1, 1],strides=[1, 1, 1, 1], padding='VALID', name="pool"))
+                # pooling_avg=tf.squeeze(tf.reduce_mean(h,axis=1)) #[batch_size,num_filters]
+                print(i, "pooling:", pooling_max)
+                # pooling=tf.concat([pooling_max,pooling_avg],axis=1) #[batch_size,num_filters*2]
+                pooled_outputs.append(pooling_max)  # h:[batch_size,sequence_length,1,num_filters]
+        # concat
+        h = tf.concat(pooled_outputs, axis=1)  # [batch_size,num_filters*len(self.filter_sizes)]
+        print("h.concat:", h)
+
+        with tf.name_scope("dropout"):
+            h = tf.nn.dropout(h,keep_prob=self.dropout_keep_prob)  # [batch_size,sequence_length - filter_size + 1,num_filters]
+        return h  # [batch_size,sequence_length - filter_size + 1,num_filters]
 
     def loss_multilabel(self,l2_lambda=0.0001): #0.0001#this loss function is for multi-label classification
         with tf.name_scope("loss"):
