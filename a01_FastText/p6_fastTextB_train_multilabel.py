@@ -83,7 +83,7 @@ def main(_):
         for epoch in range(curr_epoch,FLAGS.num_epochs):#range(start,stop,step_size)
             loss, acc, counter = 0.0, 0.0, 0
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
-                train_Y_batch=process_labels(trainY[start:end])
+                train_Y_batch=process_labels(trainY[start:end],number=start)
                 curr_loss,_=sess.run([fast_text.loss_val,fast_text.train_op],feed_dict={fast_text.sentence:trainX[start:end],
                                      fast_text.labels:train_Y_batch}) #fast_text.labels_l1999:trainY1999[start:end]
                 if epoch==0 and counter==0:
@@ -91,7 +91,7 @@ def main(_):
                     print("train_Y_batch:",train_Y_batch) #a list,each element is a list.element:may be has 1,2,3,4,5 labels.
                     #print("trainY1999[start:end]:",trainY1999[start:end])
                 loss,counter=loss+curr_loss,counter+1 #acc+curr_acc,
-                if counter %500==0:
+                if counter %50==0:
                     print("Epoch %d\tBatch %d\tTrain Loss:%.3f" %(epoch,counter,loss/float(counter))) #\tTrain Accuracy:%.3f--->,acc/float(counter)
 
                 if start%(3000*FLAGS.batch_size)==0:
@@ -99,9 +99,10 @@ def main(_):
                                                        index2label)  # testY1999,eval_acc
                     print("Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch, eval_loss, eval_accuracy))  # ,\tValidation Accuracy: %.3f--->eval_acc
                     # save model to checkpoint
-                    print("Going to save checkpoint.")
-                    save_path = FLAGS.ckpt_dir + "model.ckpt"
-                    saver.save(sess, save_path, global_step=epoch)  # fast_text.epoch_step
+                    if start%(6000*FLAGS.batch_size)==0:
+                        print("Going to save checkpoint.")
+                        save_path = FLAGS.ckpt_dir + "model.ckpt"
+                        saver.save(sess, save_path, global_step=epoch)  # fast_text.epoch_step
             #epoch increment
             print("going to increment epoch counter....")
             sess.run(fast_text.epoch_increment)
@@ -225,7 +226,7 @@ def load_data(cache_file_h5py,cache_file_pickle):
     print("INFO. cache file load successful...")
     return word2index, label2index,train_X,train_Y,vaild_X,valid_Y,test_X,test_Y
 
-def process_labels(trainY_batch,require_size=5):
+def process_labels(trainY_batch,require_size=5,number=None):
     """
     process labels to get fixed size labels given a spense label
     :param trainY_batch:
@@ -238,10 +239,12 @@ def process_labels(trainY_batch,require_size=5):
     for index in range(num_examples):
         y_list_sparse=trainY_batch[index]
         y_list_dense = [i for i, label in enumerate(y_list_sparse) if int(label) == 1]
-        #print("####y_list_dense:",y_list_dense)
         y_list=proces_label_to_algin(y_list_dense,require_size=require_size)
-        #print("####y_list:",y_list) # 1.label_index: [315] ;2.y_list: [315, 315, 315, 315, 315] ;3.y_list: [0. 0. 0. ... 0. 0. 0.]
         trainY_batch_result[index]=y_list
+        if number is not None and number%2000==0:
+            print("####y_list_dense:",y_list_dense)
+            print("####y_list:",y_list) # 1.label_index: [315] ;2.y_list: [315, 315, 315, 315, 315] ;3.y_list: [0. 0. 0. ... 0. 0. 0.]
+
     #print("###trainY_batch_result:",trainY_batch_result)
     return trainY_batch_result
 
