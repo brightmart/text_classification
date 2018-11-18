@@ -85,6 +85,35 @@ if you want to know more detail about data set of text classification or task th
 
 https://biendata.com/competition/zhihu/
 
+#### Road Map
+
+One way you can use this repository:
+ 
+step 1: you can read through this article. you will get a general idea of various classic models used to do text classification.
+
+step 2: pre-process data and/or download cached file.
+
+      a. take a look a look of jupyter notebook('pre-processing.ipynb'), where you can familiar with this text 
+
+           classification task and data set. you will also know how we pre-process data and generate training/validation/test 
+           
+           set. there are a list of things you can try at the end of this jupyter.
+
+       b. download zip file that contains cached files, so you will have all necessary data, and can start to train models.
+
+step 3: run some of models list here, and change some codes and configurations as you want, to get a good performance.
+
+      record performances, and things you done that works, and things that are not.
+
+      for example, you can take this sequence to explore: 
+      
+      1) fasttext---> 2)TextCNN---> 3)Transformer---> 4)BERT
+
+additionally, write your article about this topic, you can follow paper's style to write. you may need to read some papers
+       
+       on the way, many of these papers list in the # Reference at the end of this article; or join  a machine learning 
+       
+       competition, and apply it with what you've learned. 
 
 Models:
 -------------------------------------------------------------------------
