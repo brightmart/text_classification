@@ -83,17 +83,25 @@ def main(_):
         for epoch in range(curr_epoch,FLAGS.num_epochs):#range(start,stop,step_size)
             loss, acc, counter = 0.0, 0.0, 0
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
-                if epoch==0 and counter==0:
-                    print("trainX[start:end]:",trainX[start:end]) #2d-array. each element slength is a 100.
-                    print("trainY[start:end]:",trainY[start:end]) #a list,each element is a list.element:may be has 1,2,3,4,5 labels.
-                    #print("trainY1999[start:end]:",trainY1999[start:end])
-                    train_Y_batch=process_labels(trainY[start:end])
+                train_Y_batch=process_labels(trainY[start:end])
                 curr_loss,_=sess.run([fast_text.loss_val,fast_text.train_op],feed_dict={fast_text.sentence:trainX[start:end],
                                      fast_text.labels:train_Y_batch}) #fast_text.labels_l1999:trainY1999[start:end]
+                if epoch==0 and counter==0:
+                    print("trainX[start:end]:",trainX[start:end]) #2d-array. each element slength is a 100.
+                    print("train_Y_batch:",train_Y_batch) #a list,each element is a list.element:may be has 1,2,3,4,5 labels.
+                    #print("trainY1999[start:end]:",trainY1999[start:end])
                 loss,counter=loss+curr_loss,counter+1 #acc+curr_acc,
                 if counter %500==0:
                     print("Epoch %d\tBatch %d\tTrain Loss:%.3f" %(epoch,counter,loss/float(counter))) #\tTrain Accuracy:%.3f--->,acc/float(counter)
 
+                if start%(3000*FLAGS.batch_size)==0:
+                    eval_loss, eval_accuracy = do_eval(sess, fast_text, vaildX, vaildY, batch_size,
+                                                       index2label)  # testY1999,eval_acc
+                    print("Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch, eval_loss, eval_accuracy))  # ,\tValidation Accuracy: %.3f--->eval_acc
+                    # save model to checkpoint
+                    print("Going to save checkpoint.")
+                    save_path = FLAGS.ckpt_dir + "model.ckpt"
+                    saver.save(sess, save_path, global_step=epoch)  # fast_text.epoch_step
             #epoch increment
             print("going to increment epoch counter....")
             sess.run(fast_text.epoch_increment)
@@ -101,9 +109,10 @@ def main(_):
             # 4.validation
             print("epoch:",epoch,"validate_every:",FLAGS.validate_every,"validate or not:",(epoch % FLAGS.validate_every==0))
             if epoch % FLAGS.validate_every==0:
-                eval_loss,eval_accuracy=do_eval(sess,fast_text,testX,testY,batch_size,index2label) #testY1999,eval_acc
+                eval_loss,eval_accuracy=do_eval(sess,fast_text,vaildX,vaildY,batch_size,index2label) #testY1999,eval_acc
                 print("Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch,eval_loss,eval_accuracy)) #,\tValidation Accuracy: %.3f--->eval_acc
                 #save model to checkpoint
+                print("Going to save checkpoint.")
                 save_path=FLAGS.ckpt_dir+"model.ckpt"
                 saver.save(sess,save_path,global_step=epoch) #fast_text.epoch_step
 
@@ -113,15 +122,18 @@ def main(_):
 
 # 在验证集上做验证，报告损失、精确度
 def do_eval(sess,fast_text,evalX,evalY,batch_size,vocabulary_index2word_label): #evalY1999
-    number_examples=len(evalX)
+    evalX=evalX[0:3000]
+    evalY=evalY[0:3000]
+    number_examples,labels=evalX.shape
+    print("number_examples for validation:",number_examples)
     eval_loss,eval_acc,eval_counter=0.0,0.0,0
     batch_size=1
     for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
         evalY_batch=process_labels(evalY[start:end])
-        curr_eval_loss,logits_ = sess.run([fast_text.loss_val,fast_text.logits], #curr_eval_acc-->fast_text.accuracy
+        curr_eval_loss,logit = sess.run([fast_text.loss_val,fast_text.logits], #curr_eval_acc-->fast_text.accuracy
                                           feed_dict={fast_text.sentence: evalX[start:end],fast_text.labels: evalY_batch}) #,fast_text.labels_l1999:evalY1999[start:end]
         #print("do_eval.logits_",logits_.shape)
-        label_list_top5 = get_label_using_logits(logits_[0], vocabulary_index2word_label)
+        label_list_top5 = get_label_using_logits(logit[0], vocabulary_index2word_label)
         curr_eval_acc=calculate_accuracy(list(label_list_top5),evalY_batch[0] ,eval_counter) # evalY[start:end][0]
         eval_loss,eval_counter,eval_acc=eval_loss+curr_eval_loss,eval_counter+1,eval_acc+curr_eval_acc
 
@@ -219,15 +231,18 @@ def process_labels(trainY_batch,require_size=5):
     :param trainY_batch:
     :return:
     """
+    #print("###trainY_batch:",trainY_batch)
     num_examples,label_size=trainY_batch.shape
-    trainY_batch_result=np.zeros((num_examples,require_size))
+    trainY_batch_result=np.zeros((num_examples,require_size),dtype=int)
 
     for index in range(num_examples):
         y_list_sparse=trainY_batch[index]
         y_list_dense = [i for i, label in enumerate(y_list_sparse) if int(label) == 1]
+        #print("####y_list_dense:",y_list_dense)
         y_list=proces_label_to_algin(y_list_dense,require_size=require_size)
-        #print("1.label_index:",y_list_dense,";2.y_list:",y_list,";3.y_list:",y_list_sparse) # 1.label_index: [315] ;2.y_list: [315, 315, 315, 315, 315] ;3.y_list: [0. 0. 0. ... 0. 0. 0.]
+        #print("####y_list:",y_list) # 1.label_index: [315] ;2.y_list: [315, 315, 315, 315, 315] ;3.y_list: [0. 0. 0. ... 0. 0. 0.]
         trainY_batch_result[index]=y_list
+    #print("###trainY_batch_result:",trainY_batch_result)
     return trainY_batch_result
 
 def proces_label_to_algin(ys_list,require_size=5):

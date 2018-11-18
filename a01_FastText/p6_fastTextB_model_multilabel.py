@@ -16,6 +16,7 @@ class fastTextB:
         self.is_training=is_training
         self.learning_rate=learning_rate
         self.max_label_per_example=max_label_per_example
+        self.initializer=tf.random_normal_initializer(stddev=0.1)
 
         # 2.add placeholder (X,label)
         self.sentence = tf.placeholder(tf.int32, [None, self.sentence_len], name="sentence")     #X
@@ -44,8 +45,8 @@ class fastTextB:
     def instantiate_weights(self):
         """define all weights here"""
         # embedding matrix
-        self.Embedding = tf.get_variable("Embedding", [self.vocab_size, self.embed_size])
-        self.W = tf.get_variable("W", [self.embed_size, self.label_size])
+        self.Embedding = tf.get_variable("Embedding", [self.vocab_size, self.embed_size],initializer=self.initializer)
+        self.W = tf.get_variable("W", [self.embed_size, self.label_size],initializer=self.initializer)
         self.b = tf.get_variable("b", [self.label_size])
 
     def inference(self):
