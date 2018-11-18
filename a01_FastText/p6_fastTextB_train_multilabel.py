@@ -122,7 +122,7 @@ def do_eval(sess,fast_text,evalX,evalY,batch_size,vocabulary_index2word_label): 
                                           feed_dict={fast_text.sentence: evalX[start:end],fast_text.labels: evalY_batch}) #,fast_text.labels_l1999:evalY1999[start:end]
         #print("do_eval.logits_",logits_.shape)
         label_list_top5 = get_label_using_logits(logits_[0], vocabulary_index2word_label)
-        curr_eval_acc=calculate_accuracy(list(label_list_top5), evalY[start:end][0],eval_counter)
+        curr_eval_acc=calculate_accuracy(list(label_list_top5),evalY_batch[0] ,eval_counter) # evalY[start:end][0]
         eval_loss,eval_counter,eval_acc=eval_loss+curr_eval_loss,eval_counter+1,eval_acc+curr_eval_acc
 
     return eval_loss/float(eval_counter),eval_acc/float(eval_counter)
