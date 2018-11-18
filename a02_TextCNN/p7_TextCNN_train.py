@@ -102,7 +102,7 @@ def main(_):
                 ########################################################################################################
                 if start%(3000*FLAGS.batch_size)==0: # eval every 3000 steps.
                     eval_loss, f1_score,f1_micro,f1_macro = do_eval(sess, textCNN, vaildX, vaildY,num_classes)
-                    print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3ftF1_micro:%.3f\tF1_macro:%.3f" % (epoch, eval_loss, f1_score,f1_micro,f1_macro))
+                    print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (epoch, eval_loss, f1_score,f1_micro,f1_macro))
                     # save model to checkpoint
                     save_path = FLAGS.ckpt_dir + "model.ckpt"
                     print("Going to save model..")
@@ -123,7 +123,7 @@ def main(_):
 
         # 5.最后在测试集上做测试，并报告测试准确率 Test
         test_loss,f1_score,f1_micro,f1_macro = do_eval(sess, textCNN, testX, testY,num_classes)
-        print("Test Loss:%.3ftF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % ( test_loss,f1_score,f1_micro,f1_macro))
+        print("Test Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % ( test_loss,f1_score,f1_micro,f1_macro))
     pass
 
 
