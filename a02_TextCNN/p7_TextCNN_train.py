@@ -31,7 +31,7 @@ tf.app.flags.DEFINE_float("decay_rate", 1.0, "Rate of decay for learning rate.")
 tf.app.flags.DEFINE_string("ckpt_dir","text_cnn_title_desc_checkpoint/","checkpoint location for the model")
 tf.app.flags.DEFINE_integer("sentence_len",200,"max sentence length")
 tf.app.flags.DEFINE_integer("embed_size",128,"embedding size")
-tf.app.flags.DEFINE_boolean("is_training",True,"is traning.true:tranining,false:testing/inference")
+tf.app.flags.DEFINE_boolean("is_training_flag",True,"is training.true:tranining,false:testing/inference")
 tf.app.flags.DEFINE_integer("num_epochs",10,"number of epochs to run.")
 tf.app.flags.DEFINE_integer("validate_every", 1, "Validate every validate_every epochs.") #每10轮做一次验证
 tf.app.flags.DEFINE_boolean("use_embedding",False,"whether to use embedding or not.")
@@ -63,7 +63,7 @@ def main(_):
     with tf.Session(config=config) as sess:
         #Instantiate Model
         textCNN=TextCNN(filter_sizes,FLAGS.num_filters,num_classes, FLAGS.learning_rate, FLAGS.batch_size, FLAGS.decay_steps,
-                        FLAGS.decay_rate,FLAGS.sentence_len,vocab_size,FLAGS.embed_size,FLAGS.is_training,multi_label_flag=FLAGS.multi_label_flag)
+                        FLAGS.decay_rate,FLAGS.sentence_len,vocab_size,FLAGS.embed_size,multi_label_flag=FLAGS.multi_label_flag)
         #Initialize Save
         saver=tf.train.Saver()
         if os.path.exists(FLAGS.ckpt_dir+"checkpoint"):
@@ -89,12 +89,12 @@ def main(_):
                 iteration=iteration+1
                 if epoch==0 and counter==0:
                     print("trainX[start:end]:",trainX[start:end])
-                feed_dict = {textCNN.input_x: trainX[start:end],textCNN.dropout_keep_prob: 0.5,textCNN.iter: iteration,textCNN.tst: not FLAGS.is_training}
+                feed_dict = {textCNN.input_x: trainX[start:end],textCNN.dropout_keep_prob: 0.8,textCNN.is_training_flag:FLAGS.is_training_flag}
                 if not FLAGS.multi_label_flag:
                     feed_dict[textCNN.input_y] = trainY[start:end]
                 else:
                     feed_dict[textCNN.input_y_multilabel]=trainY[start:end]
-                curr_loss,lr,_,_=sess.run([textCNN.loss_val,textCNN.learning_rate,textCNN.update_ema,textCNN.train_op],feed_dict)
+                curr_loss,lr,_=sess.run([textCNN.loss_val,textCNN.learning_rate,textCNN.train_op],feed_dict)
                 loss,counter=loss+curr_loss,counter+1
                 if counter %50==0:
                     print("Epoch %d\tBatch %d\tTrain Loss:%.3f\tLearning rate:%.5f" %(epoch,counter,loss/float(counter),lr))
@@ -133,7 +133,8 @@ def do_eval(sess,textCNN,evalX,evalY,iteration,num_classes):
     batch_size=1
     label_dict_confuse_matrix=init_label_dict(num_classes)
     for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
-        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.input_y_multilabel:evalY[start:end],textCNN.dropout_keep_prob: 1.0,textCNN.iter: iteration,textCNN.tst: True}
+        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.input_y_multilabel:evalY[start:end],textCNN.dropout_keep_prob: 1.0,
+                     textCNN.is_training_flag: False}
         curr_eval_loss, logits= sess.run([textCNN.loss_val,textCNN.logits],feed_dict)#curr_eval_acc--->textCNN.accuracy
         predict_y = get_label_using_logits(logits[0])
         target_y= get_target_label_short(evalY[start:end][0])
@@ -382,6 +383,5 @@ def load_data(cache_file_h5py,cache_file_pickle):
         word2index, label2index=pickle.load(data_f_pickle)
     print("INFO. cache file load successful...")
     return word2index, label2index,train_X,train_Y,vaild_X,valid_Y,test_X,test_Y
-
 if __name__ == "__main__":
     tf.app.run()

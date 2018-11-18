@@ -60,7 +60,7 @@ it contain everything you need to run this repository: data is pre-processed, yo
   
 it's a zip file about 1.8G, contains 3 million training data. although after unzip it's quite big, but with the help of 
 
-hdf5, it only need a normal size of memory of computer(e.g. 8 G or less) during training.
+hdf5, it only need a normal size of memory of computer(e.g.8 G or less) during training.
 
 we use jupyter notebook: <a href='https://github.com/brightmart/text_classification/blob/master/pre-processing.ipynb'>pre-processing.ipynb</a> to pre-process data. you can have a better understanding of this task and 
 

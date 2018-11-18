@@ -156,5 +156,37 @@ def do_eval(sess,fast_text,evalX,evalY,batch_size):
         eval_loss,eval_acc,eval_counter=eval_loss+curr_eval_loss,eval_acc+curr_eval_acc,eval_counter+1
     return eval_loss/float(eval_counter),eval_acc/float(eval_counter)
 
+def load_data(cache_file_h5py,cache_file_pickle):
+    """
+    load data from h5py and pickle cache files, which is generate by take step by step of pre-processing.ipynb
+    :param cache_file_h5py:
+    :param cache_file_pickle:
+    :return:
+    """
+    if not os.path.exists(cache_file_h5py) or not os.path.exists(cache_file_pickle):
+        raise RuntimeError("############################ERROR##############################\n. "
+                           "please download cache file, it include training data and vocabulary & labels. "
+                           "link can be found in README.md\n download zip file, unzip it, then put cache files as FLAGS."
+                           "cache_file_h5py and FLAGS.cache_file_pickle suggested location.")
+    print("INFO. cache file exists. going to load cache file")
+    f_data = h5py.File(cache_file_h5py, 'r')
+    print("f_data.keys:",list(f_data.keys()))
+    train_X=f_data['train_X'] # np.array(
+    print("train_X.shape:",train_X.shape)
+    train_Y=f_data['train_Y'] # np.array(
+    print("train_Y.shape:",train_Y.shape,";")
+    vaild_X=f_data['vaild_X'] # np.array(
+    valid_Y=f_data['valid_Y'] # np.array(
+    test_X=f_data['test_X'] # np.array(
+    test_Y=f_data['test_Y'] # np.array(
+    #print(train_X)
+    #f_data.close()
+
+    word2index, label2index=None,None
+    with open(cache_file_pickle, 'rb') as data_f_pickle:
+        word2index, label2index=pickle.load(data_f_pickle)
+    print("INFO. cache file load successful...")
+    return word2index, label2index,train_X,train_Y,vaild_X,valid_Y,test_X,test_Y
+
 if __name__ == "__main__":
     tf.app.run()

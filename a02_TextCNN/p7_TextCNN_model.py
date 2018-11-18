@@ -5,8 +5,8 @@ import tensorflow as tf
 import numpy as np
 
 class TextCNN:
-    def __init__(self, filter_sizes,num_filters,num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size,
-                 is_training,initializer=tf.random_normal_initializer(stddev=0.1),multi_label_flag=False,clip_gradients=5.0,decay_rate_big=0.50):
+    def __init__(self, filter_sizes,num_filters,num_classes, learning_rate, batch_size, decay_steps, decay_rate,sequence_length,vocab_size,embed_size
+                 ,initializer=tf.random_normal_initializer(stddev=0.1),multi_label_flag=False,clip_gradients=5.0,decay_rate_big=0.50):
         """init all hyperparameter here"""
         # set hyperparamter
         self.num_classes = num_classes
@@ -14,7 +14,6 @@ class TextCNN:
         self.sequence_length=sequence_length
         self.vocab_size=vocab_size
         self.embed_size=embed_size
-        self.is_training=is_training
         self.learning_rate = tf.Variable(learning_rate, trainable=False, name="learning_rate")#ADD learning_rate
         self.learning_rate_decay_half_op = tf.assign(self.learning_rate, self.learning_rate * decay_rate_big)
         self.filter_sizes=filter_sizes # it is a list of int. e.g. [3,4,5]
@@ -23,6 +22,7 @@ class TextCNN:
         self.num_filters_total=self.num_filters * len(filter_sizes) #how many filters totally.
         self.multi_label_flag=multi_label_flag
         self.clip_gradients = clip_gradients
+        self.is_training_flag = tf.placeholder(tf.bool, name="is_training_flag")
 
         # add placeholder (X,label)
         self.input_x = tf.placeholder(tf.int32, [None, self.sequence_length], name="input_x")  # X
@@ -42,9 +42,9 @@ class TextCNN:
         self.instantiate_weights()
         self.logits = self.inference() #[None, self.label_size]. main computation graph is here.
         self.possibility=tf.nn.sigmoid(self.logits)
-        if not is_training:
-            return
-        if multi_label_flag:print("going to use multi label loss.");self.loss_val = self.loss_multilabel()
+        if multi_label_flag:
+            print("going to use multi label loss.");
+            self.loss_val = self.loss_multilabel()
         else:print("going to use single label loss.");self.loss_val = self.loss()
         self.train_op = self.train()
         if not self.multi_label_flag:
@@ -70,7 +70,9 @@ class TextCNN:
         # you can use:tf.nn.conv2d;tf.nn.relu;tf.nn.max_pool; feature shape is 4-d. feature is a new variable
         pooled_outputs = []
         for i,filter_size in enumerate(self.filter_sizes):
-            with tf.name_scope("convolution-pooling-%s" %filter_size):
+            #with tf.name_scope("convolution-pooling-%s" %filter_size):
+            with tf.variable_scope( "convolution-pooling-%s" % filter_size):
+
                 # ====>a.create filter
                 filter=tf.get_variable("filter-%s"%filter_size,[filter_size,self.embed_size,1,self.num_filters],initializer=self.initializer)
                 # ====>b.conv operation: conv2d===>computes a 2-D convolution given 4-D `input` and `filter` tensors.
@@ -80,7 +82,9 @@ class TextCNN:
                 #1)each filter with conv2d's output a shape:[1,sequence_length-filter_size+1,1,1];2)*num_filters--->[1,sequence_length-filter_size+1,1,num_filters];3)*batch_size--->[batch_size,sequence_length-filter_size+1,1,num_filters]
                 #input data format:NHWC:[batch, height, width, channels];output:4-D
                 conv=tf.nn.conv2d(self.sentence_embeddings_expanded, filter, strides=[1,1,1,1], padding="VALID",name="conv") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]
-                conv,self.update_ema=self.batchnorm(conv,self.tst, self.iter, self.b1) # TODO remove it temp
+                #conv,self.update_ema=self.batchnorm(conv,self.tst, self.iter, self.b1) # TODO remove it temp
+                conv=tf.contrib.layers.batch_norm(conv,is_training=self.is_training_flag,scope='cnn_bn_')
+
                 # ====>c. apply nolinearity
                 b=tf.get_variable("b-%s"%filter_size,[self.num_filters]) #ADD 2017-06-09
                 h=tf.nn.relu(tf.nn.bias_add(conv,b),"relu") #shape:[batch_size,sequence_length - filter_size + 1,1,num_filters]. tf.nn.bias_add:adds `bias` to `value`
@@ -153,10 +157,22 @@ class TextCNN:
             loss=loss+l2_losses
         return loss
 
-    def train(self):
+    def train_old(self):
         """based on the loss, use SGD to update parameter"""
         learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps,self.decay_rate, staircase=True)
         train_op = tf.contrib.layers.optimize_loss(self.loss_val, global_step=self.global_step,learning_rate=learning_rate, optimizer="Adam",clip_gradients=self.clip_gradients)
+        return train_op
+
+    def train(self):
+        """based on the loss, use SGD to update parameter"""
+        learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps, self.decay_rate, staircase=True)
+        self.learning_rate_=learning_rate
+        optimizer = tf.train.AdamOptimizer(learning_rate)
+        gradients, variables = zip(*optimizer.compute_gradients(self.loss_val))
+        gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS) #ADD 2018.06.01
+        with tf.control_dependencies(update_ops):  #ADD 2018.06.01
+            train_op = optimizer.apply_gradients(zip(gradients, variables))
         return train_op
 
 #test started. toy task: given a sequence of data. compute it's label: sum of its previous element,itself and next element greater than a threshold, it's label is 1,otherwise 0.

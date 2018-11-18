@@ -139,11 +139,12 @@ class TextCNNMultilayers:
             loss=loss+l2_losses
         return loss
 
-    def train(self):
+    def train_old(self):
         """based on the loss, use SGD to update parameter"""
         learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps,self.decay_rate, staircase=True)
         train_op = tf.contrib.layers.optimize_loss(self.loss_val, global_step=self.global_step,learning_rate=learning_rate, optimizer="Adam",clip_gradients=self.clip_gradients)
         return train_op
+
 
 #test started. toy task: given a sequence of data. compute it's label: sum of its previous element,itself and next element greater than a threshold, it's label is 1,otherwise 0.
 #e.g. given inputs:[1,0,1,1,0]; outputs:[0,1,1,1,0].
