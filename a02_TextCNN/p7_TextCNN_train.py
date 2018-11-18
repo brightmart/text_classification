@@ -130,7 +130,7 @@ def main(_):
 # 在验证集上做验证，报告损失、精确度
 def do_eval(sess,textCNN,evalX,evalY,num_classes):
     evalX=evalX[0:8000]
-    evalY=evalX[0:8000]
+    evalY=evalY[0:8000]
     number_examples=len(evalX)
     eval_loss,eval_counter,eval_f1_score,eval_p,eval_r=0.0,0,0.0,0.0,0.0
     batch_size=1
