@@ -200,6 +200,4 @@ def compute_single_label(listt):
             summ=0
         result.append(summ)
     return result
-
-
 #test()
