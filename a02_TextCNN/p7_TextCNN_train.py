@@ -101,8 +101,8 @@ def main(_):
 
                 ########################################################################################################
                 if start%(3000*FLAGS.batch_size)==0: # eval every 3000 steps.
-                    eval_loss, f1_score = do_eval(sess, textCNN, vaildX, vaildY,num_classes)
-                    print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f" % (epoch, eval_loss, f1_score))
+                    eval_loss, f1_score,f1_micro,f1_macro = do_eval(sess, textCNN, vaildX, vaildY,num_classes)
+                    print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3ftF1_micro:%.3f\tF1_macro:%.3f" % (epoch, eval_loss, f1_score,f1_micro,f1_macro))
                     # save model to checkpoint
                     save_path = FLAGS.ckpt_dir + "model.ckpt"
                     print("Going to save model..")
@@ -115,15 +115,15 @@ def main(_):
             # 4.validation
             print(epoch,FLAGS.validate_every,(epoch % FLAGS.validate_every==0))
             if epoch % FLAGS.validate_every==0:
-                eval_loss,f1_score=do_eval(sess,textCNN,testX,testY,num_classes)
-                print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f" % (epoch,eval_loss,f1_score))
+                eval_loss,f1_score,f1_micro,f1_macro=do_eval(sess,textCNN,testX,testY,num_classes)
+                print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (epoch,eval_loss,f1_score,f1_micro,f1_macro))
                 #save model to checkpoint
                 save_path=FLAGS.ckpt_dir+"model.ckpt"
                 saver.save(sess,save_path,global_step=epoch)
 
         # 5.最后在测试集上做测试，并报告测试准确率 Test
-        test_loss,f1_score = do_eval(sess, textCNN, testX, testY,num_classes)
-        print("Test Loss:%.3f" % ( test_loss))
+        test_loss,f1_score,f1_micro,f1_macro = do_eval(sess, textCNN, testX, testY,num_classes)
+        print("Test Loss:%.3ftF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % ( test_loss,f1_score,f1_micro,f1_macro))
     pass
 
 
@@ -145,9 +145,9 @@ def do_eval(sess,textCNN,evalX,evalY,num_classes):
         label_dict_confuse_matrix=compute_confuse_matrix(target_y, predict_y, label_dict_confuse_matrix)
         eval_loss,eval_counter=eval_loss+curr_eval_loss,eval_counter+1
 
-    f1_micro_accusation,f1_macro_accusation=compute_micro_macro(label_dict_confuse_matrix) #label_dict_accusation is a dict, key is: accusation,value is: (TP,FP,FN). where TP is number of True Positive
-    f1_score=(f1_micro_accusation+f1_macro_accusation)/2.0
-    return eval_loss/float(eval_counter),f1_score
+    f1_micro,f1_macro=compute_micro_macro(label_dict_confuse_matrix) #label_dict_accusation is a dict, key is: accusation,value is: (TP,FP,FN). where TP is number of True Positive
+    f1_score=(f1_micro+f1_macro)/2.0
+    return eval_loss/float(eval_counter),f1_score,f1_micro,f1_macro
 
 #######################################
 def compute_f1_score(predict_y,eval_y):
@@ -183,7 +183,7 @@ def compute_f1_score_removed(label_list_top5,eval_y):
     f1_score=2.0*p_5*r_5/(p_5+r_5+0.000001)
     return f1_score,p_5,r_5
 
-random_number=2000
+random_number=1000
 def compute_confuse_matrix(target_y,predict_y,label_dict,name='default'):
     """
     compute true postive(TP), false postive(FP), false negative(FN) given target lable and predict label
