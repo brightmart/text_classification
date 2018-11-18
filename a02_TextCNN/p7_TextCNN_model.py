@@ -31,7 +31,7 @@ class TextCNN:
         self.dropout_keep_prob=tf.placeholder(tf.float32,name="dropout_keep_prob")
         self.iter = tf.placeholder(tf.int32) #training iteration
         self.tst=tf.placeholder(tf.bool)
-        self.use_mulitple_layer_cnn=True
+        self.use_mulitple_layer_cnn=False
 
         self.global_step = tf.Variable(0, trainable=False, name="Global_Step")
         self.epoch_step=tf.Variable(0,trainable=False,name="Epoch_Step")

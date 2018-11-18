@@ -1,6 +1,6 @@
 # autor:xul
 # fast text. using: very simple model;n-gram to captrue location information;h-softmax to speed up training/inference
-print("started...")
+# for the n-gram you can use data_util to generate. see method process_one_sentence_to_get_ui_bi_tri_gram under aa1_data_util/data_util_zhihu.py
 import tensorflow as tf
 
 class fastTextB:
@@ -91,11 +91,6 @@ class fastTextB:
 
     def train(self):
         """based on the loss, use SGD to update parameter"""
-        learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps,
-                                                   self.decay_rate, staircase=True)
-        train_op = tf.contrib.layers.optimize_loss(self.loss_val, global_step=self.global_step,
-                                                   learning_rate=learning_rate, optimizer="Adam")
+        learning_rate = tf.train.exponential_decay(self.learning_rate, self.global_step, self.decay_steps,self.decay_rate, staircase=True)
+        train_op = tf.contrib.layers.optimize_loss(self.loss_val, global_step=self.global_step,learning_rate=learning_rate, optimizer="Adam")
         return train_op
-
-
-print("ended...")

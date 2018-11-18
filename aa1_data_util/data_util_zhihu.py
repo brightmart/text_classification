@@ -433,6 +433,7 @@ def load_data_predict(vocabulary_word2index,vocabulary_word2index_label,question
 
 def proces_label_to_algin(ys_list,require_size=5):
     """
+    given a list of labels, process it to fixed size('require_size')
     :param ys_list: a list
     :return: a list
     """
