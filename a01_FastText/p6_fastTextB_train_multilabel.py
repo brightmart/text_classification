@@ -83,7 +83,7 @@ def main(_):
         for epoch in range(curr_epoch,FLAGS.num_epochs):#range(start,stop,step_size)
             loss, acc, counter = 0.0, 0.0, 0
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
-                train_Y_batch=process_labels(trainY[start:end],number=start)
+                train_Y_batch=process_labels(trainY[start:end])
                 curr_loss,_=sess.run([fast_text.loss_val,fast_text.train_op],feed_dict={fast_text.sentence:trainX[start:end],
                                      fast_text.labels:train_Y_batch}) #fast_text.labels_l1999:trainY1999[start:end]
                 if epoch==0 and counter==0:
@@ -95,8 +95,7 @@ def main(_):
                     print("Epoch %d\tBatch %d\tTrain Loss:%.3f" %(epoch,counter,loss/float(counter))) #\tTrain Accuracy:%.3f--->,acc/float(counter)
 
                 if start%(3000*FLAGS.batch_size)==0:
-                    eval_loss, eval_accuracy = do_eval(sess, fast_text, vaildX, vaildY, batch_size,
-                                                       index2label)  # testY1999,eval_acc
+                    eval_loss, eval_accuracy = do_eval(sess, fast_text, vaildX, vaildY, batch_size,index2label)  # testY1999,eval_acc
                     print("Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch, eval_loss, eval_accuracy))  # ,\tValidation Accuracy: %.3f--->eval_acc
                     # save model to checkpoint
                     if start%(6000*FLAGS.batch_size)==0:
@@ -233,7 +232,7 @@ def process_labels(trainY_batch,require_size=5,number=None):
     :return:
     """
     #print("###trainY_batch:",trainY_batch)
-    num_examples,label_size=trainY_batch.shape
+    num_examples,_=trainY_batch.shape
     trainY_batch_result=np.zeros((num_examples,require_size),dtype=int)
 
     for index in range(num_examples):
@@ -242,8 +241,8 @@ def process_labels(trainY_batch,require_size=5,number=None):
         y_list=proces_label_to_algin(y_list_dense,require_size=require_size)
         trainY_batch_result[index]=y_list
         if number is not None and number%2000==0:
-            print("####y_list_dense:",y_list_dense)
-            print("####y_list:",y_list) # 1.label_index: [315] ;2.y_list: [315, 315, 315, 315, 315] ;3.y_list: [0. 0. 0. ... 0. 0. 0.]
+            print("####1.y_list_dense:",y_list_dense)
+            print("####2.y_list:",y_list) # 1.label_index: [315] ;2.y_list: [315, 315, 315, 315, 315] ;3.y_list: [0. 0. 0. ... 0. 0. 0.]
 
     #print("###trainY_batch_result:",trainY_batch_result)
     return trainY_batch_result
