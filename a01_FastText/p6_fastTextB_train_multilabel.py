@@ -21,7 +21,7 @@ FLAGS=tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string("cache_file_h5py","../data/ieee_zhihu_cup/data.h5","path of training/validation/test data.") #../data/sample_multiple_label.txt
 tf.app.flags.DEFINE_string("cache_file_pickle","../data/ieee_zhihu_cup/vocab_label.pik","path of vocabulary and label files") #../data/sample_multiple_label.txt
 
-tf.app.flags.DEFINE_float("learning_rate",0.01,"learning rate")
+tf.app.flags.DEFINE_float("learning_rate",0.001,"learning rate")
 tf.app.flags.DEFINE_integer("batch_size", 128, "Batch size for training/evaluating.") #512批处理的大小 32-->128
 tf.app.flags.DEFINE_integer("decay_steps", 20000, "how many steps before decay learning rate.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_float("decay_rate", 0.9, "Rate of decay for learning rate.") #0.5一次衰减多少
@@ -30,7 +30,7 @@ tf.app.flags.DEFINE_string("ckpt_dir","fast_text_checkpoint_multi/","checkpoint 
 tf.app.flags.DEFINE_integer("sentence_len",200,"max sentence length")
 tf.app.flags.DEFINE_integer("embed_size",128,"embedding size") #100
 tf.app.flags.DEFINE_boolean("is_training",True,"is traning.true:tranining,false:testing/inference")
-tf.app.flags.DEFINE_integer("num_epochs",16,"embedding size")
+tf.app.flags.DEFINE_integer("num_epochs",25,"embedding size")
 tf.app.flags.DEFINE_integer("validate_every", 1, "Validate every validate_every epochs.") #每10轮做一次验证
 #tf.app.flags.DEFINE_string("training_path", '/home/xul/xul/9_fastTextB/training-data/test-zhihu6-only-title-multilabel-trigram.txt', "location of traning data.") #每10轮做一次验证
 tf.app.flags.DEFINE_boolean("use_embedding",False,"whether to use embedding or not.")
@@ -83,18 +83,18 @@ def main(_):
         for epoch in range(curr_epoch,FLAGS.num_epochs):#range(start,stop,step_size)
             loss, acc, counter = 0.0, 0.0, 0
             for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
-                train_Y_batch=process_labels(trainY[start:end])
-                curr_loss,_=sess.run([fast_text.loss_val,fast_text.train_op],feed_dict={fast_text.sentence:trainX[start:end],
-                                     fast_text.labels:train_Y_batch}) #fast_text.labels_l1999:trainY1999[start:end]
+                #train_Y_batch=process_labels(trainY[start:end],number=start)
+                curr_loss,current_l2_loss,_=sess.run([fast_text.loss_val,fast_text.l2_losses,fast_text.train_op],
+                                                     feed_dict={fast_text.sentence:trainX[start:end],fast_text.labels_l1999:trainY[start:end]}) #fast_text.labels_l1999:trainY1999[start:end]
                 if epoch==0 and counter==0:
                     print("trainX[start:end]:",trainX[start:end]) #2d-array. each element slength is a 100.
-                    print("train_Y_batch:",train_Y_batch) #a list,each element is a list.element:may be has 1,2,3,4,5 labels.
+                    print("train_Y_batch:",trainY[start:end]) #a list,each element is a list.element:may be has 1,2,3,4,5 labels.
                     #print("trainY1999[start:end]:",trainY1999[start:end])
                 loss,counter=loss+curr_loss,counter+1 #acc+curr_acc,
                 if counter %50==0:
-                    print("Epoch %d\tBatch %d\tTrain Loss:%.3f" %(epoch,counter,loss/float(counter))) #\tTrain Accuracy:%.3f--->,acc/float(counter)
+                    print("Epoch %d\tBatch %d\tTrain Loss:%.3f\tL2 Loss:%.3f" %(epoch,counter,loss/float(counter),current_l2_loss)) #\tTrain Accuracy:%.3f--->,acc/float(counter)
 
-                if start%(3000*FLAGS.batch_size)==0:
+                if start%(1000*FLAGS.batch_size)==0:
                     eval_loss, eval_accuracy = do_eval(sess, fast_text, vaildX, vaildY, batch_size,index2label)  # testY1999,eval_acc
                     print("Epoch %d Validation Loss:%.3f\tValidation Accuracy: %.3f" % (epoch, eval_loss, eval_accuracy))  # ,\tValidation Accuracy: %.3f--->eval_acc
                     # save model to checkpoint
@@ -131,7 +131,7 @@ def do_eval(sess,fast_text,evalX,evalY,batch_size,vocabulary_index2word_label): 
     for start,end in zip(range(0,number_examples,batch_size),range(batch_size,number_examples,batch_size)):
         evalY_batch=process_labels(evalY[start:end])
         curr_eval_loss,logit = sess.run([fast_text.loss_val,fast_text.logits], #curr_eval_acc-->fast_text.accuracy
-                                          feed_dict={fast_text.sentence: evalX[start:end],fast_text.labels: evalY_batch}) #,fast_text.labels_l1999:evalY1999[start:end]
+                                          feed_dict={fast_text.sentence: evalX[start:end],fast_text.labels_l1999: evalY[start:end]}) #,fast_text.labels_l1999:evalY1999[start:end]
         #print("do_eval.logits_",logits_.shape)
         label_list_top5 = get_label_using_logits(logit[0], vocabulary_index2word_label)
         curr_eval_acc=calculate_accuracy(list(label_list_top5),evalY_batch[0] ,eval_counter) # evalY[start:end][0]
@@ -240,11 +240,14 @@ def process_labels(trainY_batch,require_size=5,number=None):
         y_list_dense = [i for i, label in enumerate(y_list_sparse) if int(label) == 1]
         y_list=proces_label_to_algin(y_list_dense,require_size=require_size)
         trainY_batch_result[index]=y_list
-        if number is not None and number%2000==0:
-            print("####1.y_list_dense:",y_list_dense)
-            print("####2.y_list:",y_list) # 1.label_index: [315] ;2.y_list: [315, 315, 315, 315, 315] ;3.y_list: [0. 0. 0. ... 0. 0. 0.]
-
-    #print("###trainY_batch_result:",trainY_batch_result)
+        if number is not None and number%30==0:
+            pass
+            #print("####0.y_list_sparse:",y_list_sparse)
+            #print("####1.y_list_dense:",y_list_dense)
+            #print("####2.y_list:",y_list) # 1.label_index: [315] ;2.y_list: [315, 315, 315, 315, 315] ;3.y_list: [0. 0. 0. ... 0. 0. 0.]
+    if number is not None and number % 30 == 0:
+        #print("###3trainY_batch_result:",trainY_batch_result)
+        pass
     return trainY_batch_result
 
 def proces_label_to_algin(ys_list,require_size=5):
