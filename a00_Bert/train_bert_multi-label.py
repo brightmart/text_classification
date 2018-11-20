@@ -18,7 +18,7 @@ tf.app.flags.DEFINE_string("cache_file_h5py","../data/ieee_zhihu_cup/data.h5","p
 tf.app.flags.DEFINE_string("cache_file_pickle","../data/ieee_zhihu_cup/vocab_label.pik","path of vocabulary and label files") #../data/sample_multiple_label.txt
 
 tf.app.flags.DEFINE_float("learning_rate",0.001,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 4, "Batch size for training/evaluating.") #批处理的大小 32-->128
+tf.app.flags.DEFINE_integer("batch_size", 32, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_string("ckpt_dir","checkpoint/","checkpoint location for the model")
 tf.app.flags.DEFINE_boolean("is_training",True,"is training.true:tranining,false:testing/inference")
 tf.app.flags.DEFINE_integer("num_epochs",15,"number of epochs to run.")
@@ -72,19 +72,20 @@ def main(_):
                          label_ids:trainY[start:end]}
             curr_loss = sess.run(loss, feed_dict) # todo
             loss_total, counter = loss_total + curr_loss, counter + 1
-            if counter % 50 == 0:
+            if counter % 20 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
 
             # evaulation
-            if start % (3000 * FLAGS.batch_size) == 0:
+            if start!=0 and start % (2000 * FLAGS.batch_size) == 0:
                 eval_loss, f1_score, f1_micro, f1_macro = do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training_eval,loss_eval,
                                                                   probabilities_eval,vaildX, vaildY, num_labels,batch_size)
                 print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (
                     epoch, eval_loss, f1_score, f1_micro, f1_macro))
                 # save model to checkpoint
-                save_path = FLAGS.ckpt_dir + "model.ckpt"
-                print("Going to save model..")
-                saver.save(sess, save_path, global_step=epoch)
+                if start % (4000 * FLAGS.batch_size)==0:
+                    save_path = FLAGS.ckpt_dir + "model.ckpt"
+                    print("Going to save model..")
+                    saver.save(sess, save_path, global_step=epoch)
 
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,labels, num_labels, use_one_hot_embeddings,reuse_flag=False):
   """Creates a classification model."""
@@ -134,8 +135,9 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
     :param batch_size:
     :return:
     """
-    vaildX = vaildX[0:3000]
-    vaildY = vaildY[0:3000]
+    num_eval=1000
+    vaildX = vaildX[0:num_eval]
+    vaildY = vaildY[0:num_eval]
     number_examples = len(vaildX)
     eval_loss, eval_counter, eval_f1_score, eval_p, eval_r = 0.0, 0, 0.0, 0.0, 0.0
     label_dict = init_label_dict(num_labels)

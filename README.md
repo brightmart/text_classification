@@ -4,6 +4,8 @@ the purpose of this repository is to explore text classification methods in NLP 
 
 #### Update: 
 
+try bert model for multi-label classification, please check session #Models Detail, 3) Bert.
+
 Google's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then 
 
 fine-tuning. <a href='https://github.com/brightmart/bert_language_understanding'>Pre-train TexCNN: idea from BERT for language understanding with running code and data set</a>
