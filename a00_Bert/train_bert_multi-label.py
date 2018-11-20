@@ -13,23 +13,18 @@ FLAGS=tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string("cache_file_h5py","../data/ieee_zhihu_cup/data.h5","path of training/validation/test data.") #../data/sample_multiple_label.txt
 tf.app.flags.DEFINE_string("cache_file_pickle","../data/ieee_zhihu_cup/vocab_label.pik","path of vocabulary and label files") #../data/sample_multiple_label.txt
 
-tf.app.flags.DEFINE_float("learning_rate",0.0003,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 4, "Batch size for training/evaluating.") #批处理的大小 32-->128
-tf.app.flags.DEFINE_integer("decay_steps", 1000, "how many steps before decay learning rate.") #6000批处理的大小 32-->128
-tf.app.flags.DEFINE_float("decay_rate", 1.0, "Rate of decay for learning rate.") #0.65一次衰减多少
+tf.app.flags.DEFINE_float("learning_rate",0.001,"learning rate")
+tf.app.flags.DEFINE_integer("batch_size", 64, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_string("ckpt_dir","checkpoint/","checkpoint location for the model")
 tf.app.flags.DEFINE_boolean("is_training",True,"is training.true:tranining,false:testing/inference")
-tf.app.flags.DEFINE_integer("num_epochs",10,"number of epochs to run.")
-tf.app.flags.DEFINE_integer("validate_every", 1, "Validate every validate_every epochs.") #每10轮做一次验证
-tf.app.flags.DEFINE_boolean("use_pretrain_embedding",False,"whether to use embedding or not.")
-tf.app.flags.DEFINE_string("word2vec_model_path","","word2vec's vocabulary and vectors")
+tf.app.flags.DEFINE_integer("num_epochs",15,"number of epochs to run.")
+
 # below hyper-parameter is for bert model
 tf.app.flags.DEFINE_integer("hidden_size",768,"hidden size")
 tf.app.flags.DEFINE_integer("num_hidden_layers",12,"number of hidden layers")
 tf.app.flags.DEFINE_integer("num_attention_heads",12,"number of attention headers")
 tf.app.flags.DEFINE_integer("intermediate_size",3072,"intermediate size of hidden layer")
 tf.app.flags.DEFINE_integer("max_seq_length",200,"max sequence length")
-
 
 def main(_):
     # 1.get training data and vocabulary & labels dict
