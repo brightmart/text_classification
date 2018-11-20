@@ -636,13 +636,12 @@ for classification task, you can add processor to define the format you want to 
 
 #### Use BERT for multi-label classification?
 
-you need to change a few things, including:
+run the following command under folder a00_Bert:
  
- 1) loss function under create_model in run_classifier.py
- 
- 2) many codes assume label is single value, not a list. you need to change it.
- 
-you can run multi-label classification with downloadable data using BERT from 
+      python  train_bert_multi-label.py
+   
+   
+or you can run multi-label classification with downloadable data using BERT from 
 
 <a href='https://github.com/brightmart/sentiment_analysis_fine_grain'>sentiment_analysis_fine_grain with BERT</a>
  
