@@ -1,6 +1,10 @@
 # coding=utf-8
 """
 train bert model
+
+1.get training data and vocabulary & labels dict
+2. create model
+3. train the model and report f1 score
 """
 import bert_modeling as modeling
 import tensorflow as tf
@@ -14,7 +18,7 @@ tf.app.flags.DEFINE_string("cache_file_h5py","../data/ieee_zhihu_cup/data.h5","p
 tf.app.flags.DEFINE_string("cache_file_pickle","../data/ieee_zhihu_cup/vocab_label.pik","path of vocabulary and label files") #../data/sample_multiple_label.txt
 
 tf.app.flags.DEFINE_float("learning_rate",0.001,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 64, "Batch size for training/evaluating.") #批处理的大小 32-->128
+tf.app.flags.DEFINE_integer("batch_size", 4, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_string("ckpt_dir","checkpoint/","checkpoint location for the model")
 tf.app.flags.DEFINE_boolean("is_training",True,"is training.true:tranining,false:testing/inference")
 tf.app.flags.DEFINE_integer("num_epochs",15,"number of epochs to run.")
@@ -27,7 +31,7 @@ tf.app.flags.DEFINE_integer("intermediate_size",3072,"intermediate size of hidde
 tf.app.flags.DEFINE_integer("max_seq_length",200,"max sequence length")
 
 def main(_):
-    # 1.get training data and vocabulary & labels dict
+    # 1. get training data and vocabulary & labels dict
     word2index, label2index, trainX, trainY, vaildX, vaildY, testX, testY = load_data(FLAGS.cache_file_h5py,FLAGS.cache_file_pickle)
     vocab_size = len(word2index); print("bert model.vocab_size:", vocab_size);
     num_labels = len(label2index); print("num_labels:", num_labels)
@@ -43,10 +47,12 @@ def main(_):
     is_training = FLAGS.is_training #tf.placeholder(tf.bool, name="is_training")
 
     use_one_hot_embeddings = False
-
     loss, per_example_loss, logits, probabilities, model = create_model(bert_config, is_training, input_ids, input_mask,
                                                             segment_ids, label_ids, num_labels,use_one_hot_embeddings)
 
+    is_training_eval=False
+    loss_eval, per_example_loss_eval, logits_eval, probabilities_eval, model_eval = create_model(bert_config, is_training_eval, input_ids, input_mask,
+                                                            segment_ids, label_ids, num_labels,use_one_hot_embeddings,reuse_flag=True)
     # 3. train the model by calling create model, get loss
     gpu_config = tf.ConfigProto()
     gpu_config.gpu_options.allow_growth = True
@@ -71,17 +77,63 @@ def main(_):
 
             # evaulation
             if start % (3000 * FLAGS.batch_size) == 0:
-                eval_loss, f1_score, f1_micro, f1_macro = do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,
-                                                                  probabilities,vaildX, vaildY, num_labels,batch_size)
+                eval_loss, f1_score, f1_micro, f1_macro = do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training_eval,loss_eval,
+                                                                  probabilities_eval,vaildX, vaildY, num_labels,batch_size)
                 print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (
                     epoch, eval_loss, f1_score, f1_micro, f1_macro))
                 # save model to checkpoint
                 save_path = FLAGS.ckpt_dir + "model.ckpt"
                 print("Going to save model..")
                 saver.save(sess, save_path, global_step=epoch)
-    # 3. eval the model from time to time
+
+def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,labels, num_labels, use_one_hot_embeddings,reuse_flag=False):
+  """Creates a classification model."""
+  model = modeling.BertModel(
+      config=bert_config,
+      is_training=is_training,
+      input_ids=input_ids,
+      input_mask=input_mask,
+      token_type_ids=segment_ids,
+      use_one_hot_embeddings=use_one_hot_embeddings)
+
+  output_layer = model.get_pooled_output()
+  hidden_size = output_layer.shape[-1].value
+  with tf.variable_scope("weights",reuse=reuse_flag):
+      output_weights = tf.get_variable("output_weights", [num_labels, hidden_size],initializer=tf.truncated_normal_initializer(stddev=0.02))
+      output_bias = tf.get_variable("output_bias", [num_labels], initializer=tf.zeros_initializer())
+
+  with tf.variable_scope("loss"):
+    if is_training:
+        print("###create_model.is_training:",is_training)
+        output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
+    logits = tf.matmul(output_layer, output_weights, transpose_b=True)
+    print("output_layer:",output_layer.shape,";output_weights:",output_weights.shape,";logits:",logits.shape)
+
+    logits = tf.nn.bias_add(logits, output_bias)
+    probabilities = tf.nn.softmax(logits, axis=-1)
+    per_example_loss=tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+    loss = tf.reduce_mean(per_example_loss)
+
+    return loss, per_example_loss, logits, probabilities,model
+
 
 def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,probabilities,vaildX, vaildY, num_labels,batch_size):
+    """
+    evalution on model using validation data
+    :param sess:
+    :param input_ids:
+    :param input_mask:
+    :param segment_ids:
+    :param label_ids:
+    :param is_training:
+    :param loss:
+    :param probabilities:
+    :param vaildX:
+    :param vaildY:
+    :param num_labels:
+    :param batch_size:
+    :return:
+    """
     vaildX = vaildX[0:3000]
     vaildY = vaildY[0:3000]
     number_examples = len(vaildX)
@@ -101,43 +153,11 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
     f1_score = (f1_micro + f1_macro) / 2.0
     return eval_loss / float(eval_counter), f1_score, f1_micro, f1_macro
 
-def bert_predict_fn():
-    # 1. predict based on
-    pass
-
-def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,labels, num_labels, use_one_hot_embeddings):
-  """Creates a classification model."""
-  model = modeling.BertModel(
-      config=bert_config,
-      is_training=is_training,
-      input_ids=input_ids,
-      input_mask=input_mask,
-      token_type_ids=segment_ids,
-      use_one_hot_embeddings=use_one_hot_embeddings)
-
-  output_layer = model.get_pooled_output()
-  hidden_size = output_layer.shape[-1].value
-  output_weights = tf.get_variable("output_weights", [num_labels, hidden_size],initializer=tf.truncated_normal_initializer(stddev=0.02))
-  output_bias = tf.get_variable("output_bias", [num_labels], initializer=tf.zeros_initializer())
-
-  with tf.variable_scope("loss"):
-    if is_training:  # if training, add dropout
-      output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
-    logits = tf.matmul(output_layer, output_weights, transpose_b=True)
-    print("output_layer:",output_layer.shape,";output_weights:",output_weights.shape,";logits:",logits.shape)
-
-    logits = tf.nn.bias_add(logits, output_bias)
-    probabilities = tf.nn.softmax(logits, axis=-1)
-    per_example_loss=tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-    loss = tf.reduce_mean(per_example_loss)
-
-    return loss, per_example_loss, logits, probabilities,model
-
 def get_input_mask_segment_ids(train_x_batch):
     """
     get input mask and segment ids given a batch of input x.
     if sequence length of input x is max_sequence_length, then shape of both input_mask and segment_ids should be
-    [batch_size, max_sequence_length]
+    [batch_size, max_sequence_length]. for those padding tokens, input_mask will be zero, value for all other place is one.
     :param train_x_batch:
     :return: input_mask_,segment_ids
     """
@@ -152,16 +172,6 @@ def get_input_mask_segment_ids(train_x_batch):
                 break
     segment_ids=np.ones((batch_size,max_sequence_length),dtype=np.int32)
     return input_mask, segment_ids
-
-# tested.
-#train_x_batch=np.ones((5,6))
-#train_x_batch[0,5]=0
-#train_x_batch[1,5]=0
-#train_x_batch[1,4]=0
-#print("train_x_batch:",train_x_batch)
-#input_mask, segment_ids=get_input_mask_segment_ids(train_x_batch)
-#print("input_mask:",input_mask)
-#print("segment_ids:",segment_ids)
 
 if __name__ == "__main__":
     tf.app.run()

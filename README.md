@@ -273,8 +273,10 @@ Finally, we will use linear layer to project these features to per-defined label
 -------------------------------------------------------------------------
 
 
-3.BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding 
+3.BERT: 
 -------------------------------------------------------------------------
+#### Pre-training of Deep Bidirectional Transformers for Language Understanding 
+
 BERT currently achieve state of art results on more than 10 NLP tasks. the key ideas behind this model is that we can 
 
 pre-train the model by using one kind of language model with huge amount of raw data, where you can find it easily.
