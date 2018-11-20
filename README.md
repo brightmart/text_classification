@@ -54,15 +54,15 @@ Models:
 -------------------------------------------------------------------------
 
 1) fastText
-2) TextCNN   
-3) TextRNN    
-4) RCNN     
-5) Hierarchical Attention Network    
-6) seq2seq with attention   
-7) Transformer("Attend Is All You Need")
-8) Dynamic Memory Network
-9) EntityNetwork:tracking state of the world
-10) Bert: Pre-training of Deep Bidirectional Transformers for Language Understanding
+2) TextCNN 
+3) Bert:Pre-training of Deep Bidirectional Transformers for Language Understanding  
+4) TextRNN    
+5) RCNN     
+6) Hierarchical Attention Network    
+7) seq2seq with attention   
+8) Transformer("Attend Is All You Need")
+9) Dynamic Memory Network
+10) EntityNetwork:tracking state of the world
 11) Ensemble models
 12) Boosting: 
 
