@@ -87,26 +87,23 @@ def main(_):
             if counter % 30 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
             if counter % 1000==0:
-                print("trainX[",start,"]:",trainX[start])
-                #print("trainY[start:end]:",trainY[start:end])
+                print("trainX[",start,"]:",trainX[start]);#print("trainY[start:end]:",trainY[start:end])
                 try:
-                    target_labels = get_target_label_short_batch(trainY[start:end])
-                    #print("target_labels:",target_labels)
+                    target_labels = get_target_label_short_batch(trainY[start:end]);#print("target_labels:",target_labels)
                     print("trainY[",start,"]:",target_labels[0])
                 except:
                     pass
-
             # evaulation
-            if start!=0 and start % (1000 * FLAGS.batch_size) == 0:
+            if start!=0 and start % (3000 * FLAGS.batch_size) == 0:
                 eval_loss, f1_score, f1_micro, f1_macro = do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training_eval,loss,
                                                                   probabilities,vaildX, vaildY, num_labels,batch_size,cls_id)
                 print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (
                     epoch, eval_loss, f1_score, f1_micro, f1_macro))
                 # save model to checkpoint
-                if start % (4000 * FLAGS.batch_size)==0:
-                    save_path = FLAGS.ckpt_dir + "model.ckpt"
-                    print("Going to save model..")
-                    saver.save(sess, save_path, global_step=epoch)
+                #if start % (4000 * FLAGS.batch_size)==0:
+                save_path = FLAGS.ckpt_dir + "model.ckpt"
+                print("Going to save model..")
+                saver.save(sess, save_path, global_step=epoch)
 
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,labels, num_labels, use_one_hot_embeddings,reuse_flag=False):
   """Creates a classification model."""
