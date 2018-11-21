@@ -91,7 +91,7 @@ def main(_):
                 #print("trainY[start:end]:",trainY[start:end])
                 try:
                     target_labels = get_target_label_short_batch(trainY[start:end])
-                    print("target_labels:",target_labels)
+                    #print("target_labels:",target_labels)
                     print("trainY[",start,"]:",target_labels[0])
                 except:
                     pass
