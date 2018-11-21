@@ -27,6 +27,7 @@ tf.app.flags.DEFINE_boolean("is_training",True,"is training.true:tranining,false
 tf.app.flags.DEFINE_integer("num_epochs",15,"number of epochs to run.")
 
 # below hyper-parameter is for bert model
+# for a middel size model, train fast. use hidden_size=128, num_hidden_layers=4, num_attention_heads=8, intermediate_size=1024
 tf.app.flags.DEFINE_integer("hidden_size",768,"hidden size")
 tf.app.flags.DEFINE_integer("num_hidden_layers",12,"number of hidden layers")
 tf.app.flags.DEFINE_integer("num_attention_heads",12,"number of attention headers")
