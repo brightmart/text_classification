@@ -84,12 +84,17 @@ def main(_):
                          label_ids:trainY[start:end]}
             curr_loss,_ = sess.run([loss,train_op], feed_dict)
             loss_total, counter = loss_total + curr_loss, counter + 1
-            if counter % 20 == 0:
+            if counter % 30 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
-            if counter % 500==0:
+            if counter % 300==0:
                 print("trainX[",start,"]:",trainX[start])
-                target_labels = get_target_label_short_batch(vaildY[start:end])
-                print("trainY[",start,"]:",target_labels[0])
+                print("vaildY[start:end]:",vaildY[start:end])
+                try:
+                    target_labels = get_target_label_short_batch(vaildY[start:end])
+                    print("target_labels:",target_labels)
+                    print("trainY[",start,"]:",target_labels[0])
+                except:
+                    pass
 
             # evaulation
             if start!=0 and start % (1000 * FLAGS.batch_size) == 0:
