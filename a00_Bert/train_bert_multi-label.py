@@ -86,11 +86,11 @@ def main(_):
             loss_total, counter = loss_total + curr_loss, counter + 1
             if counter % 30 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
-            if counter % 300==0:
+            if counter % 100==0:
                 print("trainX[",start,"]:",trainX[start])
-                print("vaildY[start:end]:",vaildY[start:end])
+                print("trainY[start:end]:",trainY[start:end])
                 try:
-                    target_labels = get_target_label_short_batch(vaildY[start:end])
+                    target_labels = get_target_label_short_batch(trainY[start:end])
                     print("target_labels:",target_labels)
                     print("trainY[",start,"]:",target_labels[0])
                 except:
