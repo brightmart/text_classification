@@ -86,7 +86,7 @@ def main(_):
             loss_total, counter = loss_total + curr_loss, counter + 1
             if counter % 30 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
-            if counter % 100==0:
+            if counter % 1000==0:
                 print("trainX[",start,"]:",trainX[start])
                 #print("trainY[start:end]:",trainY[start:end])
                 try:
