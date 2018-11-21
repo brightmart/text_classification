@@ -88,7 +88,7 @@ def main(_):
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
             if counter % 500==0:
                 print("trainX[",start,"]:",trainX[start])
-                target_labels = get_target_label_short_batch(vaildY[start:start+1])
+                target_labels = get_target_label_short_batch(vaildY[start:end])
                 print("trainY[",start,"]:",target_labels[0])
 
             # evaulation
