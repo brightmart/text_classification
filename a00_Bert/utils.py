@@ -6,6 +6,8 @@ import os
 import numpy as np
 import random
 
+random_number=500
+
 def load_data(cache_file_h5py,cache_file_pickle):
     """
     load data from h5py and pickle cache files, which is generate by take step by step of pre-processing.ipynb
@@ -71,7 +73,6 @@ def compute_f1_score_removed(label_list_top5,eval_y):
     f1_score=2.0*p_5*r_5/(p_5+r_5+0.000001)
     return f1_score,p_5,r_5
 
-random_number=1000
 def compute_confuse_matrix(target_y,predict_y,label_dict,name='default'):
     """
     compute true postive(TP), false postive(FP), false negative(FN) given target lable and predict label
