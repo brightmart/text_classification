@@ -81,8 +81,8 @@ def compute_confuse_matrix(target_y,predict_y,label_dict,name='default'):
     :return: macro_f1(a scalar),micro_f1(a scalar)
     """
     #1.get target label and predict label
-    #if random.choice([x for x in range(random_number)]) ==1:
-    print(name+".target_y:",target_y,";predict_y:",predict_y) #debug purpose
+    if random.choice([x for x in range(random_number)]) ==1:
+        print(name+".target_y:",target_y,";predict_y:",predict_y) #debug purpose
 
     #2.count number of TP,FP,FN for each class
     y_labels_unique=[]

@@ -7,6 +7,7 @@ train bert model
 3. train the model and report f1 score
 """
 import bert_modeling as modeling
+import optimization
 import tensorflow as tf
 import numpy as np
 
@@ -17,7 +18,7 @@ FLAGS=tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string("cache_file_h5py","../data/ieee_zhihu_cup/data.h5","path of training/validation/test data.") #../data/sample_multiple_label.txt
 tf.app.flags.DEFINE_string("cache_file_pickle","../data/ieee_zhihu_cup/vocab_label.pik","path of vocabulary and label files") #../data/sample_multiple_label.txt
 
-tf.app.flags.DEFINE_float("learning_rate",0.001,"learning rate")
+tf.app.flags.DEFINE_float("learning_rate",0.0001,"learning rate")
 tf.app.flags.DEFINE_integer("batch_size", 32, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_string("ckpt_dir","checkpoint/","checkpoint location for the model")
 tf.app.flags.DEFINE_boolean("is_training",True,"is training.true:tranining,false:testing/inference")
@@ -37,7 +38,7 @@ def main(_):
     num_labels = len(label2index); print("num_labels:", num_labels)
     num_examples, FLAGS.max_seq_length = trainX.shape;print("num_examples of training:", num_examples, ";max_seq_length:", FLAGS.max_seq_length)
 
-    # 2. create model
+    # 2. create model, define train operation
     bert_config = modeling.BertConfig(vocab_size=len(word2index), hidden_size=FLAGS.hidden_size, num_hidden_layers=FLAGS.num_hidden_layers,
                                       num_attention_heads=FLAGS.num_attention_heads,intermediate_size=FLAGS.intermediate_size)
     input_ids = tf.placeholder(tf.int32, [FLAGS.batch_size, FLAGS.max_seq_length], name="input_ids")
@@ -49,6 +50,10 @@ def main(_):
     use_one_hot_embeddings = False
     loss, per_example_loss, logits, probabilities, model = create_model(bert_config, is_training, input_ids, input_mask,
                                                             segment_ids, label_ids, num_labels,use_one_hot_embeddings)
+    # define train operation
+    num_train_steps = int(float(num_examples) / float(FLAGS.batch_size * FLAGS.num_epochs));use_tpu=False
+    num_warmup_steps = int(num_train_steps * 0.1)
+    train_op = optimization.create_optimizer(loss, FLAGS.learning_rate, num_train_steps, num_warmup_steps, use_tpu)
 
     is_training_eval=False
     loss_eval, per_example_loss_eval, logits_eval, probabilities_eval, model_eval = create_model(bert_config, is_training_eval, input_ids, input_mask,
@@ -70,19 +75,19 @@ def main(_):
             input_mask_,segment_ids_=get_input_mask_segment_ids(trainX[start:end])
             feed_dict = {input_ids: trainX[start:end], input_mask: input_mask_, segment_ids:segment_ids_,
                          label_ids:trainY[start:end]}
-            curr_loss = sess.run(loss, feed_dict) # todo
+            curr_loss,_ = sess.run([loss,train_op], feed_dict)
             loss_total, counter = loss_total + curr_loss, counter + 1
             if counter % 20 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
 
             # evaulation
-            if start!=0 and start % (2000 * FLAGS.batch_size) == 0:
+            if start!=0 and start % (300 * FLAGS.batch_size) == 0:
                 eval_loss, f1_score, f1_micro, f1_macro = do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training_eval,loss_eval,
                                                                   probabilities_eval,vaildX, vaildY, num_labels,batch_size)
                 print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (
                     epoch, eval_loss, f1_score, f1_micro, f1_macro))
                 # save model to checkpoint
-                if start % (4000 * FLAGS.batch_size)==0:
+                if start % (2000 * FLAGS.batch_size)==0:
                     save_path = FLAGS.ckpt_dir + "model.ckpt"
                     print("Going to save model..")
                     saver.save(sess, save_path, global_step=epoch)
