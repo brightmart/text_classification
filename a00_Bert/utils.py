@@ -6,7 +6,7 @@ import os
 import numpy as np
 import random
 
-random_number=500
+random_number=300
 
 def load_data(cache_file_h5py,cache_file_pickle):
     """

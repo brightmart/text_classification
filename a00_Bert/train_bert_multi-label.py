@@ -88,7 +88,8 @@ def main(_):
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
             if counter % 500==0:
                 print("trainX[",start,"]:",trainX[start])
-                print("trainY[",start,"]:",trainY[start])
+                target_labels = get_target_label_short_batch(vaildY[start:start+1])
+                print("trainY[",start,"]:",target_labels[0])
 
             # evaulation
             if start!=0 and start % (1000 * FLAGS.batch_size) == 0:
@@ -97,7 +98,7 @@ def main(_):
                 print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (
                     epoch, eval_loss, f1_score, f1_micro, f1_macro))
                 # save model to checkpoint
-                if start % (3000 * FLAGS.batch_size)==0:
+                if start % (4000 * FLAGS.batch_size)==0:
                     save_path = FLAGS.ckpt_dir + "model.ckpt"
                     print("Going to save model..")
                     saver.save(sess, save_path, global_step=epoch)
