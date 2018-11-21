@@ -38,7 +38,7 @@ def main(_):
     # 1. get training data and vocabulary & labels dict
     word2index, label2index, trainX, trainY, vaildX, vaildY, testX, testY = load_data(FLAGS.cache_file_h5py,FLAGS.cache_file_pickle)
     vocab_size = len(word2index); print("bert model.vocab_size:", vocab_size);
-    num_labels = len(label2index); print("num_labels:", num_labels)
+    num_labels = len(label2index); print("num_labels:", num_labels); cls_id=word2index['CLS'];print("id of 'CLS':",word2index['CLS'])
     num_examples, FLAGS.max_seq_length = trainX.shape;print("num_examples of training:", num_examples, ";max_seq_length:", FLAGS.max_seq_length)
 
     # 2. create model, define train operation
@@ -79,8 +79,8 @@ def main(_):
         loss_total, counter = 0.0, 0
         for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
             iteration = iteration + 1
-            input_mask_,segment_ids_=get_input_mask_segment_ids(trainX[start:end])
-            feed_dict = {input_ids: trainX[start:end], input_mask: input_mask_, segment_ids:segment_ids_,
+            input_ids_,input_mask_,segment_ids_=get_input_mask_segment_ids(trainX[start:end],cls_id)
+            feed_dict = {input_ids: input_ids_, input_mask: input_mask_, segment_ids:segment_ids_,
                          label_ids:trainY[start:end]}
             curr_loss,_ = sess.run([loss,train_op], feed_dict)
             loss_total, counter = loss_total + curr_loss, counter + 1
@@ -94,7 +94,7 @@ def main(_):
             # evaulation
             if start!=0 and start % (1000 * FLAGS.batch_size) == 0:
                 eval_loss, f1_score, f1_micro, f1_macro = do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training_eval,loss,
-                                                                  probabilities,vaildX, vaildY, num_labels,batch_size)
+                                                                  probabilities,vaildX, vaildY, num_labels,batch_size,cls_id)
                 print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (
                     epoch, eval_loss, f1_score, f1_micro, f1_macro))
                 # save model to checkpoint
@@ -134,7 +134,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,la
     return loss, per_example_loss, logits, probabilities,model
 
 
-def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,probabilities,vaildX, vaildY, num_labels,batch_size):
+def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,probabilities,vaildX, vaildY, num_labels,batch_size,cls_id):
     """
     evalution on model using validation data
     :param sess:
@@ -160,8 +160,8 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
     f1_score_micro_sklearn_total=0.0
     # batch_size=1 # TODO
     for start, end in zip(range(0, number_examples, batch_size), range(batch_size, number_examples, batch_size)):
-        input_mask_, segment_ids_ = get_input_mask_segment_ids(vaildX[start:end])
-        feed_dict = {input_ids: vaildX[start:end],input_mask:input_mask_,segment_ids:segment_ids_,
+        input_ids_,input_mask_, segment_ids_ = get_input_mask_segment_ids(vaildX[start:end],cls_id)
+        feed_dict = {input_ids: input_ids_,input_mask:input_mask_,segment_ids:segment_ids_,
                      label_ids:vaildY[start:end]}
         curr_eval_loss, prob = sess.run([loss, probabilities],feed_dict)
         target_labels=get_target_label_short_batch(vaildY[start:end])
@@ -174,7 +174,7 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
     f1_score_result = (f1_micro + f1_macro) / 2.0
     return eval_loss / float(eval_counter), f1_score_result, f1_micro, f1_macro
 
-def get_input_mask_segment_ids(train_x_batch):
+def get_input_mask_segment_ids(train_x_batch,cls_id):
     """
     get input mask and segment ids given a batch of input x.
     if sequence length of input x is max_sequence_length, then shape of both input_mask and segment_ids should be
@@ -184,6 +184,7 @@ def get_input_mask_segment_ids(train_x_batch):
     """
     batch_size,max_sequence_length=train_x_batch.shape
     input_mask=np.ones((batch_size,max_sequence_length),dtype=np.int32)
+    # set 0 for token in padding postion
     for i in range(batch_size):
         input_x_=train_x_batch[i] # a list, length is max_sequence_length
         input_x=list(input_x_)
@@ -191,8 +192,27 @@ def get_input_mask_segment_ids(train_x_batch):
             if input_x[j]==0:
                 input_mask[i][j:]=0
                 break
+    # insert CLS token for classification
+    input_ids=np.zeros((batch_size,max_sequence_length),dtype=np.int32)
+    #print("input_ids.shape1:",input_ids.shape)
+    for k in range(batch_size):
+        input_id_list=list(train_x_batch[k])
+        input_id_list.insert(0,cls_id)
+        del input_id_list[-1]
+        input_ids[k]=input_id_list
+    #print("input_ids.shape2:",input_ids.shape)
+
     segment_ids=np.ones((batch_size,max_sequence_length),dtype=np.int32)
-    return input_mask, segment_ids
+    return input_mask, segment_ids,input_ids
+
+#train_x_batch=np.ones((3,5))
+#train_x_batch[0,4]=0
+#train_x_batch[1,3]=0
+#train_x_batch[1,4]=0
+#cls_id=2
+#print("train_x_batch:",train_x_batch)
+#input_mask, segment_ids,input_ids=get_input_mask_segment_ids(train_x_batch,cls_id)
+#print("input_mask:",input_mask, "segment_ids:",segment_ids,"input_ids:",input_ids)
 
 if __name__ == "__main__":
     tf.app.run()
