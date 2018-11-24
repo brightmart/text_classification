@@ -208,7 +208,8 @@ def get_target_label_short_batch(eval_y_big): # tested.
 #get top5 predicted labels
 def get_label_using_prob(prob,top_number=5):
     y_predict_labels = [i for i in range(len(prob)) if prob[i] >= 0.50]  # TODO 0.5PW e.g.[2,12,13,10]
-    if len(y_predict_labels) < 1: y_predict_labels = [np.argmax(prob)]
+    if len(y_predict_labels) < 1:
+        y_predict_labels = [np.argmax(prob)]
     return y_predict_labels
 
 def get_label_using_logits_batch(prob,top_number=5): # tested.

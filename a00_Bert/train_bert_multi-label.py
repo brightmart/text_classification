@@ -132,7 +132,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,la
     print("output_layer:",output_layer.shape,";output_weights:",output_weights.shape,";logits:",logits.shape) # shape=(?, 1999)
 
     logits = tf.nn.bias_add(logits, output_bias)
-    probabilities = tf.nn.softmax(logits, axis=-1)
+    probabilities = tf.nn.sigmoid(logits) #tf.nn.softmax(logits, axis=-1)
     per_example_loss=tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits) # shape=(?, 1999)
     loss_batch = tf.reduce_sum(per_example_loss,axis=1)  #  (?,)
     loss=tf.reduce_mean(loss_batch) #  (?,)
