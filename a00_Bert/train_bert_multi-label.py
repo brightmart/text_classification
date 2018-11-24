@@ -24,7 +24,8 @@ tf.app.flags.DEFINE_boolean("is_training",True,"is training.true:tranining,false
 tf.app.flags.DEFINE_integer("num_epochs",15,"number of epochs to run.")
 
 # below hyper-parameter is for bert model
-# for a middel size model, train fast. use hidden_size=128, num_hidden_layers=4, num_attention_heads=8, intermediate_size=1024
+# to train a big model,                     use hidden_size=768, num_hidden_layers=12, num_attention_heads=12, intermediate_size=3072
+# to train a middel size model, train fast. use hidden_size=128, num_hidden_layers=4, num_attention_heads=8, intermediate_size=1024
 tf.app.flags.DEFINE_integer("hidden_size",128,"hidden size") # 768
 tf.app.flags.DEFINE_integer("num_hidden_layers",2,"number of hidden layers") # 12--->4
 tf.app.flags.DEFINE_integer("num_attention_heads",4,"number of attention headers") # 12
@@ -149,6 +150,7 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
     number_examples = len(vaildX)
     eval_loss, eval_counter, eval_f1_score, eval_p, eval_r = 0.0, 0, 0.0, 0.0, 0.0
     label_dict = init_label_dict(num_labels)
+    print("do_eval.number_examples:",number_examples)
     f1_score_micro_sklearn_total=0.0
     # batch_size=1 # TODO
     for start, end in zip(range(0, number_examples, batch_size), range(batch_size, number_examples, batch_size)):
@@ -168,7 +170,7 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
 
     f1_micro, f1_macro = compute_micro_macro(label_dict)  # label_dictis a dict, key is: accusation,value is: (TP,FP,FN). where TP is number of True Positive
     f1_score_result = (f1_micro + f1_macro) / 2.0
-    return eval_loss / float(eval_counter), f1_score_result, f1_micro, f1_macro
+    return eval_loss / float(eval_counter+0.00001), f1_score_result, f1_micro, f1_macro
 
 def get_input_mask_segment_ids(train_x_batch,cls_id):
     """
