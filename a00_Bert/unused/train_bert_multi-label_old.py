@@ -19,17 +19,17 @@ tf.app.flags.DEFINE_string("cache_file_h5py","../data/ieee_zhihu_cup/data.h5","p
 tf.app.flags.DEFINE_string("cache_file_pickle","../data/ieee_zhihu_cup/vocab_label.pik","path of vocabulary and label files") #../data/sample_multiple_label.txt
 
 tf.app.flags.DEFINE_float("learning_rate",0.0001,"learning rate")
-tf.app.flags.DEFINE_integer("batch_size", 256, "Batch size for training/evaluating.") #批处理的大小 32-->128
+tf.app.flags.DEFINE_integer("batch_size", 32, "Batch size for training/evaluating.") #批处理的大小 32-->128
 tf.app.flags.DEFINE_string("ckpt_dir","checkpoint/","checkpoint location for the model")
 tf.app.flags.DEFINE_boolean("is_training",True,"is training.true:tranining,false:testing/inference")
 tf.app.flags.DEFINE_integer("num_epochs",15,"number of epochs to run.")
 
 # below hyper-parameter is for bert model
 # for a middel size model, train fast. use hidden_size=128, num_hidden_layers=4, num_attention_heads=8, intermediate_size=1024
-tf.app.flags.DEFINE_integer("hidden_size",128,"hidden size") # 768
-tf.app.flags.DEFINE_integer("num_hidden_layers",2,"number of hidden layers") # 12--->4
-tf.app.flags.DEFINE_integer("num_attention_heads",4,"number of attention headers") # 12
-tf.app.flags.DEFINE_integer("intermediate_size",256,"intermediate size of hidden layer") # 3072-->512
+tf.app.flags.DEFINE_integer("hidden_size",768,"hidden size")
+tf.app.flags.DEFINE_integer("num_hidden_layers",12,"number of hidden layers")
+tf.app.flags.DEFINE_integer("num_attention_heads",12,"number of attention headers")
+tf.app.flags.DEFINE_integer("intermediate_size",3072,"intermediate size of hidden layer")
 tf.app.flags.DEFINE_integer("max_seq_length",200,"max sequence length")
 
 def main(_):
@@ -46,7 +46,7 @@ def main(_):
     input_mask = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name="input_mask")
     segment_ids = tf.placeholder(tf.int32, [None,FLAGS.max_seq_length],name="segment_ids")
     label_ids = tf.placeholder(tf.float32, [None,num_labels], name="label_ids")
-    is_training = tf.placeholder(tf.bool, name="is_training") # FLAGS.is_training
+    is_training = FLAGS.is_training #tf.placeholder(tf.bool, name="is_training")
 
     use_one_hot_embeddings = False
     loss, per_example_loss, logits, probabilities, model = create_model(bert_config, is_training, input_ids, input_mask,
@@ -77,21 +77,21 @@ def main(_):
             iteration = iteration + 1
             input_ids_,input_mask_,segment_ids_=get_input_mask_segment_ids(trainX[start:end],cls_id)
             feed_dict = {input_ids: input_ids_, input_mask: input_mask_, segment_ids:segment_ids_,
-                         label_ids:trainY[start:end],is_training:True}
+                         label_ids:trainY[start:end]}
             curr_loss,_ = sess.run([loss,train_op], feed_dict)
             loss_total, counter = loss_total + curr_loss, counter + 1
             if counter % 30 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
             if counter % 1000==0:
-                print("input_ids[",start,"]:",input_ids[start]);#print("trainY[start:end]:",trainY[start:end])
+                print("trainX[",start,"]:",trainX[start]);#print("trainY[start:end]:",trainY[start:end])
                 try:
                     target_labels = get_target_label_short_batch(trainY[start:end]);#print("target_labels:",target_labels)
                     print("trainY[",start,"]:",target_labels[0])
                 except:
                     pass
             # evaulation
-            if start!=0 and start % (1000 * FLAGS.batch_size) == 0:
-                eval_loss, f1_score, f1_micro, f1_macro = do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,
+            if start!=0 and start % (3000 * FLAGS.batch_size) == 0:
+                eval_loss, f1_score, f1_micro, f1_macro = do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training_eval,loss,
                                                                   probabilities,vaildX, vaildY, num_labels,batch_size,cls_id)
                 print("Epoch %d Validation Loss:%.3f\tF1 Score:%.3f\tF1_micro:%.3f\tF1_macro:%.3f" % (
                     epoch, eval_loss, f1_score, f1_micro, f1_macro))
@@ -118,25 +118,16 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,la
       output_bias = tf.get_variable("output_bias", [num_labels], initializer=tf.zeros_initializer())
 
   with tf.variable_scope("loss"):
-    #if is_training:
-    #    print("###create_model.is_training:",is_training)
-    #    output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
-    def apply_dropout_last_layer(output_layer):
+    if is_training:
+        print("###create_model.is_training:",is_training)
         output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
-        return output_layer
-
-    def not_apply_dropout(output_layer):
-        return output_layer
-
-    output_layer=tf.cond(is_training, lambda: apply_dropout_last_layer(output_layer), lambda:not_apply_dropout(output_layer))
     logits = tf.matmul(output_layer, output_weights, transpose_b=True)
     print("output_layer:",output_layer.shape,";output_weights:",output_weights.shape,";logits:",logits.shape)
 
     logits = tf.nn.bias_add(logits, output_bias)
     probabilities = tf.nn.softmax(logits, axis=-1)
-    per_example_loss=tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits) # shape=(?, 1999)
-    loss_batch = tf.reduce_sum(per_example_loss,axis=1)  #  (?,)
-    loss=tf.reduce_mean(loss_batch) #  (?,)
+    per_example_loss=tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
+    loss = tf.reduce_mean(per_example_loss)
 
     return loss, per_example_loss, logits, probabilities,model
 
@@ -144,6 +135,19 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,la
 def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,probabilities,vaildX, vaildY, num_labels,batch_size,cls_id):
     """
     evalution on model using validation data
+    :param sess:
+    :param input_ids:
+    :param input_mask:
+    :param segment_ids:
+    :param label_ids:
+    :param is_training:
+    :param loss:
+    :param probabilities:
+    :param vaildX:
+    :param vaildY:
+    :param num_labels:
+    :param batch_size:
+    :return:
     """
     num_eval=1000
     vaildX = vaildX[0:num_eval]
@@ -156,7 +160,7 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
     for start, end in zip(range(0, number_examples, batch_size), range(batch_size, number_examples, batch_size)):
         input_ids_,input_mask_, segment_ids_ = get_input_mask_segment_ids(vaildX[start:end],cls_id)
         feed_dict = {input_ids: input_ids_,input_mask:input_mask_,segment_ids:segment_ids_,
-                     label_ids:vaildY[start:end],is_training:False}
+                     label_ids:vaildY[start:end]}
         curr_eval_loss, prob = sess.run([loss, probabilities],feed_dict)
         target_labels=get_target_label_short_batch(vaildY[start:end])
         predict_labels=get_label_using_logits_batch(prob)

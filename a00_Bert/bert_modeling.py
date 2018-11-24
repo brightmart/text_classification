@@ -139,7 +139,7 @@ class BertModel(object):
 
     Args:
       config: `BertConfig` instance.
-      is_training: bool. rue for training model, false for eval model. Controls
+      is_training: bool. true for training model, false for eval model. Controls
         whether dropout will be applied.
       input_ids: int32 Tensor of shape [batch_size, seq_length].
       input_mask: (optional) int32 Tensor of shape [batch_size, seq_length].
@@ -154,10 +154,21 @@ class BertModel(object):
       ValueError: The config is invalid or one of the input tensor shapes
         is invalid.
     """
+    # change 11.24 is_training is changed from bool to placeholder.
+
     config = copy.deepcopy(config)
-    if not is_training:
-      config.hidden_dropout_prob = 0.0
-      config.attention_probs_dropout_prob = 0.0
+    # if not is_training:
+    #     config.hidden_dropout_prob = 0.0
+    #     config.attention_probs_dropout_prob = 0.0
+    def not_apply_dropout():
+        config.hidden_dropout_prob = 0.0
+        config.attention_probs_dropout_prob = 0.0
+        return 1
+
+    def apply_dropout():
+        return 1
+
+    tf.cond(is_training,apply_dropout,not_apply_dropout)
 
     input_shape = get_shape_list(input_ids, expected_rank=2)
     batch_size = input_shape[0]

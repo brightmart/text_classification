@@ -196,6 +196,15 @@ def get_target_label_short_batch(eval_y_big): # tested.
         eval_y_short_big.append(eval_y_short)
     return eval_y_short_big
 
+#eval_y_big=np.zeros((3,6))
+#eval_y_big[0,5]=1
+#eval_y_big[0,0]=1
+#eval_y_big[1,0]=1
+#eval_y_big[1,1]=1
+#print("eval_y_big:",eval_y_big)
+#result=get_target_label_short_batch(eval_y_big)
+#print("result:",result)
+
 #get top5 predicted labels
 def get_label_using_logits(logits,top_number=5):
     y_predict_labels = [i for i in range(len(logits)) if logits[i] >= 0.50]  # TODO 0.5PW e.g.[2,12,13,10]
