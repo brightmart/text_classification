@@ -81,7 +81,7 @@ def main(_):
             if counter % 30 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
             if counter % 300==0:
-                print("input_ids[",start,"]:",input_ids_[start]);#print("trainY[start:end]:",trainY[start:end])
+                print("input_ids[",start,"]:",input_ids_[0]);#print("trainY[start:end]:",trainY[start:end])
                 try:
                     target_labels = get_target_label_short_batch(trainY[start:end]);#print("target_labels:",target_labels)
                     print("trainY[",start,"]:",target_labels[0])
