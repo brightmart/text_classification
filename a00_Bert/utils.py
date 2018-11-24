@@ -206,16 +206,16 @@ def get_target_label_short_batch(eval_y_big): # tested.
 #print("result:",result)
 
 #get top5 predicted labels
-def get_label_using_logits(logits,top_number=5):
-    y_predict_labels = [i for i in range(len(logits)) if logits[i] >= 0.50]  # TODO 0.5PW e.g.[2,12,13,10]
-    if len(y_predict_labels) < 1: y_predict_labels = [np.argmax(logits)]
+def get_label_using_prob(prob,top_number=5):
+    y_predict_labels = [i for i in range(len(prob)) if prob[i] >= 0.50]  # TODO 0.5PW e.g.[2,12,13,10]
+    if len(y_predict_labels) < 1: y_predict_labels = [np.argmax(prob)]
     return y_predict_labels
 
-def get_label_using_logits_batch(logits,top_number=5): # tested.
+def get_label_using_logits_batch(prob,top_number=5): # tested.
     result_labels=[]
-    for i in range(len(logits)):
-        single_logit=logits[i]
-        labels=get_label_using_logits(single_logit)
+    for i in range(len(prob)):
+        single_prob=prob[i]
+        labels=get_label_using_prob(single_prob)
         result_labels.append(labels)
     return result_labels
 

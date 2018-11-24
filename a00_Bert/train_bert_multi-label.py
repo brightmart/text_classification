@@ -160,6 +160,10 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
         curr_eval_loss, prob = sess.run([loss, probabilities],feed_dict)
         target_labels=get_target_label_short_batch(vaildY[start:end])
         predict_labels=get_label_using_logits_batch(prob)
+        if start%100==0:
+            print("prob:",prob)
+            print("predict_labels:",predict_labels)
+
         #print("predict_labels:",predict_labels)
         label_dict=compute_confuse_matrix_batch(target_labels,predict_labels,label_dict,name='bert')
         eval_loss, eval_counter = eval_loss + curr_eval_loss, eval_counter + 1
