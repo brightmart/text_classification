@@ -56,7 +56,6 @@ def main(_):
     global_step = tf.Variable(0, trainable=False, name="Global_Step")
     train_op = tf.contrib.layers.optimize_loss(loss, global_step=global_step, learning_rate=FLAGS.learning_rate,optimizer="Adam", clip_gradients=3.0)
 
-    is_training_eval=False
     # 3. train the model by calling create model, get loss
     gpu_config = tf.ConfigProto()
     gpu_config.gpu_options.allow_growth = True
@@ -82,7 +81,7 @@ def main(_):
             if counter % 30 == 0:
                 print(epoch,"\t",iteration,"\tloss:",loss_total/float(counter),"\tcurrent_loss:",curr_loss)
             if counter % 1000==0:
-                print("input_ids[",start,"]:",input_ids[start]);#print("trainY[start:end]:",trainY[start:end])
+                print("input_ids[",start,"]:",input_ids_[start]);#print("trainY[start:end]:",trainY[start:end])
                 try:
                     target_labels = get_target_label_short_batch(trainY[start:end]);#print("target_labels:",target_labels)
                     print("trainY[",start,"]:",target_labels[0])
@@ -129,7 +128,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,la
 
     output_layer=tf.cond(is_training, lambda: apply_dropout_last_layer(output_layer), lambda:not_apply_dropout(output_layer))
     logits = tf.matmul(output_layer, output_weights, transpose_b=True)
-    print("output_layer:",output_layer.shape,";output_weights:",output_weights.shape,";logits:",logits.shape)
+    print("output_layer:",output_layer.shape,";output_weights:",output_weights.shape,";logits:",logits.shape) # shape=(?, 1999)
 
     logits = tf.nn.bias_add(logits, output_bias)
     probabilities = tf.nn.softmax(logits, axis=-1)
@@ -160,7 +159,7 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
         target_labels=get_target_label_short_batch(vaildY[start:end])
         predict_labels=get_label_using_logits_batch(prob)
         if start%100==0:
-            print("prob:",prob)
+            print("prob.shape:",prob.shape,";prob:",prob)
             print("predict_labels:",predict_labels)
 
         #print("predict_labels:",predict_labels)
