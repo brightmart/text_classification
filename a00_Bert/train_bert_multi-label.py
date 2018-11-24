@@ -72,7 +72,7 @@ def main(_):
     for epoch in range(curr_epoch, FLAGS.num_epochs):
         loss_total, counter = 0.0, 0
         for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
-            iteration = iteration + 1
+            iteration = iteration + 1 ###
             input_mask_, segment_ids_, input_ids_=get_input_mask_segment_ids(trainX[start:end],cls_id) # input_ids_,input_mask_,segment_ids_
             feed_dict = {input_ids: input_ids_, input_mask: input_mask_, segment_ids:segment_ids_,
                          label_ids:trainY[start:end],is_training:True}
