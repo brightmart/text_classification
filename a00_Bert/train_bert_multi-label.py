@@ -11,8 +11,7 @@ import tensorflow as tf
 import os
 import numpy as np
 
-from utils import load_data,init_label_dict,get_label_using_logits,get_target_label_short,compute_confuse_matrix,\
-    compute_micro_macro,compute_confuse_matrix_batch,get_label_using_logits_batch,get_target_label_short_batch
+from utils import load_data,init_label_dict,get_target_label_short,compute_confuse_matrix,compute_micro_macro,compute_confuse_matrix_batch,get_label_using_logits_batch,get_target_label_short_batch
 
 FLAGS=tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string("cache_file_h5py","../data/ieee_zhihu_cup/data.h5","path of training/validation/test data.") #../data/sample_multiple_label.txt
