@@ -73,7 +73,7 @@ def main(_):
         loss_total, counter = 0.0, 0
         for start, end in zip(range(0, number_of_training_data, batch_size),range(batch_size, number_of_training_data, batch_size)):
             iteration = iteration + 1
-            input_ids_,input_mask_,segment_ids_=get_input_mask_segment_ids(trainX[start:end],cls_id)
+            input_mask_, segment_ids_, input_ids_=get_input_mask_segment_ids(trainX[start:end],cls_id) # input_ids_,input_mask_,segment_ids_
             feed_dict = {input_ids: input_ids_, input_mask: input_mask_, segment_ids:segment_ids_,
                          label_ids:trainY[start:end],is_training:True}
             curr_loss,_ = sess.run([loss,train_op], feed_dict)
@@ -152,7 +152,7 @@ def do_eval(sess,input_ids,input_mask,segment_ids,label_ids,is_training,loss,pro
     f1_score_micro_sklearn_total=0.0
     # batch_size=1 # TODO
     for start, end in zip(range(0, number_examples, batch_size), range(batch_size, number_examples, batch_size)):
-        input_ids_,input_mask_, segment_ids_ = get_input_mask_segment_ids(vaildX[start:end],cls_id)
+        input_mask_, segment_ids_, input_ids_ = get_input_mask_segment_ids(vaildX[start:end],cls_id)
         feed_dict = {input_ids: input_ids_,input_mask:input_mask_,segment_ids:segment_ids_,
                      label_ids:vaildY[start:end],is_training:False}
         curr_eval_loss, prob = sess.run([loss, probabilities],feed_dict)
