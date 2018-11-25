@@ -89,10 +89,14 @@ Model   | fastText|TextCNN|TextRNN| RCNN | HierAtteNet|Seq2seqAttn|EntityNet|Dyn
 Score   | 0.362   |  0.405| 0.358 | 0.395| 0.398      |0.322      |0.400    |0.392        |0.322
 Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h           |7h
 --------------------------------------------------------------------------------------------------
-
+ 
+ Bert model achieves 0.368 after first 9 epoch.
+ 
  Ensemble of TextCNN,EntityNet,DynamicMemory: 0.411
  
  Ensemble EntityNet,DynamicMemory: 0.403
+ 
+
  
  --------------------------------------------------------------------------------------------------
  
@@ -352,7 +356,7 @@ run the following command under folder a00_Bert:
  
       python  train_bert_multi-label.py
    
-   
+It achieve 0.368 after 9 epoch.
 or you can run multi-label classification with downloadable data using BERT from 
 
 <a href='https://github.com/brightmart/sentiment_analysis_fine_grain'>sentiment_analysis_fine_grain with BERT</a>
