@@ -90,7 +90,7 @@ Score   | 0.362   |  0.405| 0.358 | 0.395| 0.398      |0.322      |0.400    |0.3
 Training| 10m     |  2h   |10h    | 2h   | 2h         |3h         |3h       |5h           |7h
 --------------------------------------------------------------------------------------------------
  
- Bert model achieves 0.368 after first 9 epoch.
+ Bert model achieves 0.368 after first 9 epoch from validation set.
  
  Ensemble of TextCNN,EntityNet,DynamicMemory: 0.411
  
