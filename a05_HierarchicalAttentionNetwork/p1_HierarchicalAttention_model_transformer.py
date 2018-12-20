@@ -472,4 +472,4 @@ def get_input_y(i,input_x,batch_size):
     input_y = np.array(input_y)
     return input_y
 
-test()
+#test()
