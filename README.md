@@ -6,7 +6,7 @@ The purpose of this repository is to explore text classification methods in NLP 
 
 Try bert model for multi-label classification, please check session #Models Detail, 3) Bert.
  
-<a href='https://github.com/brightmart/nlp_chinese_corpus'>Large Amount of Chinese Corpus for NLP available!'</a>
+<a href='https://github.com/brightmart/nlp_chinese_corpus'>Large Amount of Chinese Corpus for NLP Available!</a>
 
 Google's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then 
 
