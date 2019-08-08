@@ -537,7 +537,7 @@ III.Attention Mechanism:
 
 1) transfer encoder input list and hidden state of decoder
 
-2) calculate similiarity of hidden state with each encoder input, to get possibility distribution for each encoder input.
+2) calculate similarity of hidden state with each encoder input, to get possibility distribution for each encoder input.
 
 3) weighted sum of encoder input based on possibility distribution.
 
@@ -617,7 +617,7 @@ Model Structure:
 
 2) Dynamic memory: 
 
-a. compute gate by using 'similiarity' of keys,values with input of story. 
+a. compute gate by using 'similarity' of keys,values with input of story. 
 
 b. get candidate hidden state by transform each key,value and input.
 
@@ -709,7 +709,7 @@ During the process of doing large scale of multi-label classification, serveral 
 It depend the task you are doing. From the task we conducted here, we believe that ensemble models based on models trained from multiple features including word, character for title and description can help to reach very high accuarcy; However, in some cases,as just alphaGo Zero demonstrated, algorithm is more important then data or computational power, in fact alphaGo Zero did not use any humam data. 
 
 2) Is there a ceiling for any specific model or algorithm?
-The answer is yes. lots of different models were used here, we found many models have similiar performances, even though there are quite different in structure. In some extent, the difference of performance is not so big.
+The answer is yes. lots of different models were used here, we found many models have similar performances, even though there are quite different in structure. In some extent, the difference of performance is not so big.
 
 3) Is case study of error useful?
 I think it is quite useful especially when you have done many different things, but reached a limit. For example, by doing case study, you can find labels that models can make correct prediction, and where they make mistakes. And to imporove performance by  increasing weights of these wrong predicted labels or finding potential errors from data.
