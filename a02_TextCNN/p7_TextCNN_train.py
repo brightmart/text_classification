@@ -133,31 +133,34 @@ def do_eval(sess, textCNN, evalX, evalY, num_classes):
     evalY = evalY[0:3000]
     number_examples = len(evalX)
     eval_loss, eval_counter, eval_f1_score, eval_p, eval_r = 0.0, 0, 0.0, 0.0, 0.0
-    batch_size = FLAGS.batch_size
+    batch_size = 1
     predict = []
 
-    for start, end in zip(range(0, number_examples, batch_size), range(batch_size, number_examples, batch_size)):
+    for start, end in zip(range(0, number_examples, batch_size), range(batch_size, number_examples + batch_size, batch_size)):
         ''' evaluation in one batch '''
-        feed_dict = {textCNN.input_x: evalX[start:end], textCNN.input_y_multilabel: evalY[start:end], textCNN.dropout_keep_prob: 1.0,
+        feed_dict = {textCNN.input_x: evalX[start:end],
+                     textCNN.input_y_multilabel: evalY[start:end],
+                     textCNN.dropout_keep_prob: 1.0,
                      textCNN.is_training_flag: False}
         current_eval_loss, logits = sess.run(
             [textCNN.loss_val, textCNN.logits], feed_dict)
-        predict += logits[0]
+        predict = [*predict, np.argmax(np.array(logits[0]))]
         eval_loss += current_eval_loss
         eval_counter += 1
+    evalY = [np.argmax(ii) for ii in evalY]
 
     if not FLAGS.multi_label_flag:
         predict = [int(ii > 0.5) for ii in predict]
-    _, _, f1_macro, f1_micro, _ = fastF1(predict, evalY)
-    f1_score = (f1_micro+f1_macro)/2.0
-    return eval_loss/float(eval_counter), f1_score, f1_micro, f1_macro
+    _, _, f1_macro, f1_micro, _ = fastF1(predict, evalY, num_classes)
+    f1_score = (f1_micro + f1_macro) / 2.0
+    return eval_loss / float(eval_counter), f1_score, f1_micro, f1_macro
 
 @jit
-def fastF1(result, predict):
+def fastF1(result: list, predict: list, num_classes: int):
     ''' f1 score '''
     true_total, r_total, p_total, p, r = 0, 0, 0, 0, 0
     total_list = []
-    for trueValue in range(6):
+    for trueValue in range(num_classes):
         trueNum, recallNum, precisionNum = 0, 0, 0
         for index, values in enumerate(result):
             if values == trueValue:
@@ -174,18 +177,15 @@ def fastF1(result, predict):
         p += P
         r += R
         f1 = (2 * P * R) / (P + R) if (P + R) else 0
-        print(id2rela[trueValue], P, R, f1)
         total_list.append([P, R, f1])
-    p /= 6
-    r /= 6
-    micro_r = true_total / r_total
-    micro_p = true_total / p_total
+    p, r = np.array([p, r]) / num_classes
+    micro_r, micro_p = true_total / np.array([r_total, p_total])
     macro_f1 = (2 * p * r) / (p + r) if (p + r) else 0
-    micro_f1 = (2 * micro_p * micro_r) / (micro_p +
-                                          micro_r) if (micro_p + micro_r) else 0
-    print('P: {:.2f}%, R: {:.2f}%, Micro_f1: {:.2f}%, Macro_f1: {:.2f}%'.format(
-        p*100, r*100, micro_f1 * 100, macro_f1*100))
-    return p, r, macro_f1, micro_f1, total_lists
+    micro_f1 = (2 * micro_p * micro_r) / (micro_p + micro_r) if (micro_p + micro_r) else 0
+    accuracy = true_total / len(result)
+    print('P: {:.2f}%, R: {:.2f}%, Micro_f1: {:.2f}%, Macro_f1: {:.2f}%, Accuracy: {:.2f}'.format(
+        p * 100, r * 100, micro_f1 * 100, macro_f1 * 100, accuracy * 100))
+    return p, r, macro_f1, micro_f1, total_list
 
 def assign_pretrained_word_embedding(sess,vocabulary_index2word,vocab_size,textCNN,word2vec_model_path):
     import word2vec # we put import here so that many people who do not use word2vec do not need to install this package. you can move import to the beginning of this file.
