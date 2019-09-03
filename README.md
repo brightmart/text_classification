@@ -4,7 +4,7 @@ The purpose of this repository is to explore text classification methods in NLP 
 
 #### Update: 
 
-Try bert model for multi-label classification, please check session #Models Detail, 3) Bert.
+Releasing Pre-trained Model of <a href="https://github.com/brightmart/roberta_zh"> RoBERTa_Chinese</a> Trained with 30G Raw Chinese Corpus, 24 layers and 12 layers, 2019-Sep-8, This Weekend!
  
 <a href='https://github.com/brightmart/nlp_chinese_corpus'>Large Amount of Chinese Corpus for NLP Available!</a>
 
