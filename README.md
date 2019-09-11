@@ -54,6 +54,8 @@ question(as query), then ask the model to predict an answer; if you feed story s
 
 classification task. 
 
+To discuss ML/DL/NLP problems and get tech support from each other, you can join QQ group: 836811304
+
 Models:
 -------------------------------------------------------------------------
 
