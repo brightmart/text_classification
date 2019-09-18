@@ -139,7 +139,7 @@ if you use python3, it will be fine as long as you change print/try catch functi
 TextCNN model is already transfomed to python 3.6
 
 
-Sample data: <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>cached file </a>
+Sample data: <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>cached file of baidu</a> or <a href="https://drive.google.com/drive/folders/0AKEuT4gza2AlUk9PVA">Google Drive:</a>send me an email
 -------------------------------------------------------------------------------------------------------
 to help you run this repository, currently we re-generate training/validation/test data and vocabulary/labels, and saved 
 
