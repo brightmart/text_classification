@@ -1,10 +1,12 @@
 Text Classification
 -------------------------------------------------------------------------
-the purpose of this repository is to explore text classification methods in NLP with deep learning.
+The purpose of this repository is to explore text classification methods in NLP with deep learning.
 
 #### Update: 
 
-try bert model for multi-label classification, please check session #Models Detail, 3) Bert.
+Releasing Pre-trained Model of <a href="https://github.com/brightmart/albert_zh">ALBERT_Chinese</a> Training with 30G+ Raw Chinese Corpus, xxlarge, xlarge and more, Target to match State of the Art performance in Chinese, 2019-Oct-7, During the National Day of China!
+ 
+<a href='https://github.com/brightmart/nlp_chinese_corpus'>Large Amount of Chinese Corpus for NLP Available!</a>
 
 Google's BERT achieved new state of art result on more than 10 tasks in NLP using pre-train in language model then 
 
@@ -51,6 +53,8 @@ answering with contexts(or history). for example, you can let the model to read 
 question(as query), then ask the model to predict an answer; if you feed story same as query, then it can do 
 
 classification task. 
+
+To discuss ML/DL/NLP problems and get tech support from each other, you can join QQ group: 836811304
 
 Models:
 -------------------------------------------------------------------------
@@ -135,7 +139,7 @@ if you use python3, it will be fine as long as you change print/try catch functi
 TextCNN model is already transfomed to python 3.6
 
 
-Sample data: <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>cached file </a>
+Sample data: <a href='https://pan.baidu.com/s/1yWZf2eAPxq15-r2hHk2M-Q'>cached file of baidu</a> or <a href="https://drive.google.com/drive/folders/0AKEuT4gza2AlUk9PVA">Google Drive:</a>send me an email
 -------------------------------------------------------------------------------------------------------
 to help you run this repository, currently we re-generate training/validation/test data and vocabulary/labels, and saved 
 
@@ -535,7 +539,7 @@ III.Attention Mechanism:
 
 1) transfer encoder input list and hidden state of decoder
 
-2) calculate similiarity of hidden state with each encoder input, to get possibility distribution for each encoder input.
+2) calculate similarity of hidden state with each encoder input, to get possibility distribution for each encoder input.
 
 3) weighted sum of encoder input based on possibility distribution.
 
@@ -615,7 +619,7 @@ Model Structure:
 
 2) Dynamic memory: 
 
-a. compute gate by using 'similiarity' of keys,values with input of story. 
+a. compute gate by using 'similarity' of keys,values with input of story. 
 
 b. get candidate hidden state by transform each key,value and input.
 
@@ -707,7 +711,7 @@ During the process of doing large scale of multi-label classification, serveral 
 It depend the task you are doing. From the task we conducted here, we believe that ensemble models based on models trained from multiple features including word, character for title and description can help to reach very high accuarcy; However, in some cases,as just alphaGo Zero demonstrated, algorithm is more important then data or computational power, in fact alphaGo Zero did not use any humam data. 
 
 2) Is there a ceiling for any specific model or algorithm?
-The answer is yes. lots of different models were used here, we found many models have similiar performances, even though there are quite different in structure. In some extent, the difference of performance is not so big.
+The answer is yes. lots of different models were used here, we found many models have similar performances, even though there are quite different in structure. In some extent, the difference of performance is not so big.
 
 3) Is case study of error useful?
 I think it is quite useful especially when you have done many different things, but reached a limit. For example, by doing case study, you can find labels that models can make correct prediction, and where they make mistakes. And to imporove performance by  increasing weights of these wrong predicted labels or finding potential errors from data.
