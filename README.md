@@ -4,7 +4,7 @@ The purpose of this repository is to explore text classification methods in NLP 
 
 #### Update: 
 
-Language Understanding Evaluation benchmark for Chinese( <a href='https://github.com/CLUEbenchmark/CLUE'>CLUE benchmark<a/>): run 10 tasks & 9 baselines with one line of code, performance comparision with details.
+Language Understanding Evaluation benchmark for Chinese(<a href='https://github.com/CLUEbenchmark/CLUE'>CLUE benchmark<a/>): run 10 tasks & 9 baselines with one line of code, performance comparision with details.
 
 Releasing Pre-trained Model of <a href="https://github.com/brightmart/albert_zh">ALBERT_Chinese</a> Training with 30G+ Raw Chinese Corpus, xxlarge, xlarge and more, Target to match State of the Art performance in Chinese, 2019-Oct-7, During the National Day of China!
  
