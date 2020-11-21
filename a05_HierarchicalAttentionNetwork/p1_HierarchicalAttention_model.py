@@ -262,8 +262,7 @@ class HierarchicalAttention:
         embedded_words_squeeze = [tf.squeeze(x, axis=1) for x in
                                   embedded_words_splitted]  # it is a list,length is sentence_length, each element is [batch_size*num_sentences,embed_size]
         # demension_1=embedded_words_squeeze[0].get_shape().dims[0]
-        h_t = tf.ones((self.batch_size * self.num_sentences,
-                       self.hidden_size))  #TODO self.hidden_size h_t =int(tf.get_shape(embedded_words_squeeze[0])[0]) # tf.ones([self.batch_size*self.num_sentences, self.hidden_size]) # [batch_size*num_sentences,embed_size]
+        h_t = tf.ones_like(embedded_words_squeeze[0])
         h_t_forward_list = []
         for time_step, Xt in enumerate(embedded_words_squeeze):  # Xt: [batch_size*num_sentences,embed_size]
             h_t = self.gru_single_step_word_level(Xt,h_t)  # [batch_size*num_sentences,embed_size]<------Xt:[batch_size*num_sentences,embed_size];h_t:[batch_size*num_sentences,embed_size]
@@ -283,7 +282,7 @@ class HierarchicalAttention:
                                   embedded_words_splitted]  # it is a list,length is sentence_length, each element is [batch_size*num_sentences,embed_size]
         embedded_words_squeeze.reverse()  # it is a list,length is sentence_length, each element is [batch_size*num_sentences,embed_size]
         # demension_1=int(tf.get_shape(embedded_words_squeeze[0])[0]) #h_t = tf.ones([self.batch_size*self.num_sentences, self.hidden_size])
-        h_t = tf.ones((self.batch_size * self.num_sentences, self.hidden_size))
+        h_t = tf.ones_like(embedded_words_squeeze[0])
         h_t_backward_list = []
         for time_step, Xt in enumerate(embedded_words_squeeze):
             h_t = self.gru_single_step_word_level(Xt, h_t)
@@ -303,7 +302,7 @@ class HierarchicalAttention:
         sentence_representation_squeeze = [tf.squeeze(x, axis=1) for x in
                                            sentence_representation_splitted]  # it is a list.length is num_sentences,each element is [batch_size, hidden_size*2]
         # demension_1 = int(tf.get_shape(sentence_representation_squeeze[0])[0]) #scalar: batch_size
-        h_t = tf.ones((self.batch_size, self.hidden_size * 2))  # TODO
+        h_t = tf.ones_like(sentence_representation_squeeze[0])
         h_t_forward_list = []
         for time_step, Xt in enumerate(sentence_representation_squeeze):  # Xt:[batch_size, hidden_size*2]
             h_t = self.gru_single_step_sentence_level(Xt,
@@ -324,7 +323,7 @@ class HierarchicalAttention:
                                            sentence_representation_splitted]  # it is a list.length is num_sentences,each element is [batch_size, hidden_size*2]
         sentence_representation_squeeze.reverse()
         # demension_1 = int(tf.get_shape(sentence_representation_squeeze[0])[0])  # scalar: batch_size
-        h_t = tf.ones((self.batch_size, self.hidden_size * 2))
+        h_t = tf.ones_like(sentence_representation_squeeze[0])
         h_t_forward_list = []
         for time_step, Xt in enumerate(sentence_representation_squeeze):  # Xt:[batch_size, hidden_size*2]
             h_t = self.gru_single_step_sentence_level(Xt,h_t)  # h_t:[batch_size,hidden_size]<---------Xt:[batch_size, hidden_size*2]; h_t:[batch_size, hidden_size*2]
