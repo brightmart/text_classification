@@ -148,9 +148,9 @@ class DynamicMemoryNetwork:
         y_pred=tf.zeros((self.batch_size,self.hidden_size)) #TODO usually we will init this as a special token '<GO>', you can change this line by pass embedding of '<GO>' from outside.
         logits_list=[]
         logits_return=None
+        y_previous_q = tf.concat([y_pred, self.query_embedding], axis=1)  # [batch_hidden_size*2]
         for i in range(steps):
             cell = rnn.GRUCell(self.hidden_size)
-            y_previous_q=tf.concat([y_pred,self.query_embedding],axis=1) #[batch_hidden_size*2]
             _, a = cell( y_previous_q,a)
             logits=tf.layers.dense(a,units=self.num_classes) #[batch_size,vocab_size]
             logits_list.append(logits)
