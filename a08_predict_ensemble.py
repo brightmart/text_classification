@@ -75,8 +75,8 @@ def main(_):
     test= load_data_predict(vocabulary_word2index,vocabulary_word2index_label,questionid_question_lists)
     testX=[]
     question_id_list=[]
-    for tuple in test:
-        question_id,question_string_list=tuple
+    for data in test:
+        question_id,question_string_list=data
         question_id_list.append(question_id)
         testX.append(question_string_list)
     # 2.Data preprocessing: Sequence padding
