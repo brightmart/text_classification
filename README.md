@@ -4,7 +4,7 @@ The purpose of this repository is to explore text classification methods in NLP 
 
 #### Update: 
 
-Auto-labelling NLP tool: <a href='https://www.qclue.cn/demo'>Request Demo</a>
+Auto-labelling NLP tool: <a href='https://www.modelfun.cn/demo'>Request Demo</a>
 
 Language Understanding Evaluation benchmark for Chinese(<a href='https://www.CLUEbenchmarks.com'>CLUE benchmark<a/>): run 10 tasks & 9 baselines with one line of code, performance comparision with details.
 
