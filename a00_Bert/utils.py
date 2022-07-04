@@ -146,9 +146,7 @@ def compute_f1_macro_use_TFFPFN(label_dict):
         TP,FP,FN=tuplee
         f1_score_onelabel=compute_f1(TP,FP,FN,'macro')
         f1_dict[label]=f1_score_onelabel
-    f1_score_sum=0.0
-    for label,f1_score in f1_dict.items():
-        f1_score_sum=f1_score_sum+f1_score
+    f1_score_sum=np.sum(f1_dict.values())
     f1_score=f1_score_sum/float(num_classes)
     return f1_score
 
